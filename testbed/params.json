@@ -1,0 +1,22 @@
+{
+  "seed": 2202,
+  "reps": 5,
+  "bdp_bytes": 625000,
+  "tb": {"rate": "100mbit", "delay": "50ms", "burst": 4542},
+  "partA": {
+    "ccs": ["bbr", "cubic", "reno"],
+    "loss_pct": [0, 0.1, 0.5, 2],
+    "queue_bdp": 1,
+    "secs": 120
+  },
+  "partB": {
+    "queue_bdp": [0.25, 1, 4],
+    "secs": 300,
+    "stagger_s": 5,
+    "bbr_first_reps": [1, 3, 5]
+  },
+  "settle_s": 5,
+  "samplers": {"ping_interval_s": 0.01, "ss_interval_s": 0.1, "tc_interval_s": 0.1},
+  "max_core_busy_pct": 50,
+  "max_attempts": 3
+}
