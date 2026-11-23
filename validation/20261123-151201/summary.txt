@@ -1,0 +1,8 @@
+(a) PASS  idle RTT median 50.30 ms
+(b) PASS  CUBIC receiver goodput 95.37 Mb/s (>= 93)
+(c) PASS  netem drop rate 0.494% (2355/476547 pkts)
+(d) PASS  delay netem drops: 0 (b run), 0 (c run)
+(e) PASS  rwnd_limited 0.0% of time
+(f) PASS  max per-core busy 11.1%
+
+ALL PASS

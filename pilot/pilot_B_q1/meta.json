@@ -1,0 +1,47 @@
+{
+  "run_id": "pilot_B_q1",
+  "part": "pilot",
+  "ccs": "bbr,cubic",
+  "loss_pct": "none",
+  "queue_bdp": 1,
+  "rep": 0,
+  "secs": 300,
+  "order": 0,
+  "queue_bytes": 625000,
+  "stagger_s": 5,
+  "attempt": 1,
+  "tb": {
+    "rate": "100mbit",
+    "delay": "50ms",
+    "burst": 4542
+  },
+  "seed": 2202,
+  "git": {
+    "commit": null,
+    "dirty": true
+  },
+  "kernel": "6.6.87.2-microsoft-standard-WSL2",
+  "status": "ok",
+  "wall_start": "2026-11-23T15:28:13",
+  "flows": [
+    {
+      "cc": "bbr",
+      "port": 5201,
+      "launch_epoch": 1795444104.653,
+      "iperf_start_epoch": 1795444104,
+      "local_port": 55912,
+      "actual_cc": "bbr"
+    },
+    {
+      "cc": "cubic",
+      "port": 5202,
+      "launch_epoch": 1795444109.655,
+      "iperf_start_epoch": 1795444109,
+      "local_port": 40586,
+      "actual_cc": "cubic"
+    }
+  ],
+  "max_core_busy_pct": 17.9,
+  "errors": [],
+  "wall_end": "2026-11-23T15:33:30"
+}

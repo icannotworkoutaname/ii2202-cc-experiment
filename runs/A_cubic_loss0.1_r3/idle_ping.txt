@@ -1,0 +1,25 @@
+PING 10.0.2.2 (10.0.2.2) 56(84) bytes of data.
+[1795448197.113985] 64 bytes from 10.0.2.2: icmp_seq=1 ttl=63 time=50.4 ms
+[1795448197.314944] 64 bytes from 10.0.2.2: icmp_seq=2 ttl=63 time=50.3 ms
+[1795448197.515916] 64 bytes from 10.0.2.2: icmp_seq=3 ttl=63 time=50.4 ms
+[1795448197.716221] 64 bytes from 10.0.2.2: icmp_seq=4 ttl=63 time=50.7 ms
+[1795448197.916942] 64 bytes from 10.0.2.2: icmp_seq=5 ttl=63 time=50.2 ms
+[1795448198.118122] 64 bytes from 10.0.2.2: icmp_seq=6 ttl=63 time=50.3 ms
+[1795448198.319434] 64 bytes from 10.0.2.2: icmp_seq=7 ttl=63 time=50.5 ms
+[1795448198.520489] 64 bytes from 10.0.2.2: icmp_seq=8 ttl=63 time=50.4 ms
+[1795448198.721510] 64 bytes from 10.0.2.2: icmp_seq=9 ttl=63 time=50.5 ms
+[1795448198.922358] 64 bytes from 10.0.2.2: icmp_seq=10 ttl=63 time=50.3 ms
+[1795448199.123624] 64 bytes from 10.0.2.2: icmp_seq=11 ttl=63 time=50.8 ms
+[1795448199.324612] 64 bytes from 10.0.2.2: icmp_seq=12 ttl=63 time=50.5 ms
+[1795448199.525711] 64 bytes from 10.0.2.2: icmp_seq=13 ttl=63 time=50.6 ms
+[1795448199.726661] 64 bytes from 10.0.2.2: icmp_seq=14 ttl=63 time=50.4 ms
+[1795448199.927504] 64 bytes from 10.0.2.2: icmp_seq=15 ttl=63 time=50.3 ms
+[1795448200.128315] 64 bytes from 10.0.2.2: icmp_seq=16 ttl=63 time=50.2 ms
+[1795448200.329355] 64 bytes from 10.0.2.2: icmp_seq=17 ttl=63 time=50.4 ms
+[1795448200.530241] 64 bytes from 10.0.2.2: icmp_seq=18 ttl=63 time=50.3 ms
+[1795448200.731017] 64 bytes from 10.0.2.2: icmp_seq=19 ttl=63 time=50.2 ms
+[1795448200.932135] 64 bytes from 10.0.2.2: icmp_seq=20 ttl=63 time=50.4 ms
+
+--- 10.0.2.2 ping statistics ---
+20 packets transmitted, 20 received, 0% packet loss, time 3818ms
+rtt min/avg/max/mdev = 50.183/50.397/50.760/0.147 ms

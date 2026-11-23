@@ -1,0 +1,39 @@
+{
+  "run_id": "A_bbr_loss0.5_r2",
+  "part": "A",
+  "ccs": "bbr",
+  "loss_pct": "0.5",
+  "queue_bdp": "1",
+  "rep": "2",
+  "secs": "120",
+  "order": "28",
+  "queue_bytes": 625000,
+  "stagger_s": 0,
+  "attempt": 1,
+  "tb": {
+    "rate": "100mbit",
+    "delay": "50ms",
+    "burst": 4542
+  },
+  "seed": 2202,
+  "git": {
+    "commit": "141545907d9b2fcd3032a4c7825290701534d43a",
+    "dirty": true
+  },
+  "kernel": "6.6.87.2-microsoft-standard-WSL2",
+  "status": "ok",
+  "wall_start": "2026-11-23T16:45:20",
+  "flows": [
+    {
+      "cc": "bbr",
+      "port": 5201,
+      "launch_epoch": 1795448731.0,
+      "iperf_start_epoch": 1795448731,
+      "local_port": 34746,
+      "actual_cc": "bbr"
+    }
+  ],
+  "max_core_busy_pct": 9.2,
+  "errors": [],
+  "wall_end": "2026-11-23T16:47:32"
+}

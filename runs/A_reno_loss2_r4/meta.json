@@ -1,0 +1,39 @@
+{
+  "run_id": "A_reno_loss2_r4",
+  "part": "A",
+  "ccs": "reno",
+  "loss_pct": "2",
+  "queue_bdp": "1",
+  "rep": "4",
+  "secs": "120",
+  "order": "44",
+  "queue_bytes": 625000,
+  "stagger_s": 0,
+  "attempt": 1,
+  "tb": {
+    "rate": "100mbit",
+    "delay": "50ms",
+    "burst": 4542
+  },
+  "seed": 2202,
+  "git": {
+    "commit": "141545907d9b2fcd3032a4c7825290701534d43a",
+    "dirty": true
+  },
+  "kernel": "6.6.87.2-microsoft-standard-WSL2",
+  "status": "ok",
+  "wall_start": "2026-11-23T17:20:32",
+  "flows": [
+    {
+      "cc": "reno",
+      "port": 5201,
+      "launch_epoch": 1795450843.168,
+      "iperf_start_epoch": 1795450843,
+      "local_port": 37134,
+      "actual_cc": "reno"
+    }
+  ],
+  "max_core_busy_pct": 9.3,
+  "errors": [],
+  "wall_end": "2026-11-23T17:22:44"
+}

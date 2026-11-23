@@ -1,0 +1,12 @@
+== snd s0
+qdisc netem 8089: root refcnt 21 limit 10000
+ Sent 1494826203 bytes 995281 pkt (dropped 0, overlimits 0 requeues 0) 
+ backlog 0b 0p requeues 0
+== rtr r0
+qdisc netem 8088: root refcnt 21 limit 10000 delay 50ms
+ Sent 32738074 bytes 490767 pkt (dropped 0, overlimits 0 requeues 0) 
+ backlog 196b 2p requeues 0
+== rtr r1
+qdisc tbf 8087: root refcnt 21 rate 100Mbit burst 4537b lat 49.6ms 
+ Sent 1494602173 bytes 995134 pkt (dropped 148, overlimits 2943178 requeues 0) 
+ backlog 0b 0p requeues 0

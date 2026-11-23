@@ -1,0 +1,47 @@
+{
+  "run_id": "B_q1_r4",
+  "part": "B",
+  "ccs": "cubic,bbr",
+  "loss_pct": "none",
+  "queue_bdp": "1",
+  "rep": "4",
+  "secs": "300",
+  "order": "73",
+  "queue_bytes": 625000,
+  "stagger_s": 5,
+  "attempt": 1,
+  "tb": {
+    "rate": "100mbit",
+    "delay": "50ms",
+    "burst": 4542
+  },
+  "seed": 2202,
+  "git": {
+    "commit": "141545907d9b2fcd3032a4c7825290701534d43a",
+    "dirty": true
+  },
+  "kernel": "6.6.87.2-microsoft-standard-WSL2",
+  "status": "ok",
+  "wall_start": "2026-11-23T19:01:55",
+  "flows": [
+    {
+      "cc": "cubic",
+      "port": 5201,
+      "launch_epoch": 1795456926.282,
+      "iperf_start_epoch": 1795456926,
+      "local_port": 50462,
+      "actual_cc": "cubic"
+    },
+    {
+      "cc": "bbr",
+      "port": 5202,
+      "launch_epoch": 1795456931.284,
+      "iperf_start_epoch": 1795456931,
+      "local_port": 46932,
+      "actual_cc": "bbr"
+    }
+  ],
+  "max_core_busy_pct": 16.1,
+  "errors": [],
+  "wall_end": "2026-11-23T19:07:12"
+}

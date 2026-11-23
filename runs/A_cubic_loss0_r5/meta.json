@@ -1,0 +1,39 @@
+{
+  "run_id": "A_cubic_loss0_r5",
+  "part": "A",
+  "ccs": "cubic",
+  "loss_pct": "0",
+  "queue_bdp": "1",
+  "rep": "5",
+  "secs": "120",
+  "order": "45",
+  "queue_bytes": 625000,
+  "stagger_s": 0,
+  "attempt": 1,
+  "tb": {
+    "rate": "100mbit",
+    "delay": "50ms",
+    "burst": 4542
+  },
+  "seed": 2202,
+  "git": {
+    "commit": "141545907d9b2fcd3032a4c7825290701534d43a",
+    "dirty": true
+  },
+  "kernel": "6.6.87.2-microsoft-standard-WSL2",
+  "status": "ok",
+  "wall_start": "2026-11-23T17:22:44",
+  "flows": [
+    {
+      "cc": "cubic",
+      "port": 5201,
+      "launch_epoch": 1795450975.153,
+      "iperf_start_epoch": 1795450975,
+      "local_port": 45106,
+      "actual_cc": "cubic"
+    }
+  ],
+  "max_core_busy_pct": 15.8,
+  "errors": [],
+  "wall_end": "2026-11-23T17:24:56"
+}

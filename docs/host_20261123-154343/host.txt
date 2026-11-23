@@ -1,0 +1,349 @@
+===== uname: uname -a
+Linux Yu 6.6.87.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+
+===== lscpu: lscpu
+Architecture:                         x86_64
+CPU op-mode(s):                       32-bit, 64-bit
+Address sizes:                        39 bits physical, 48 bits virtual
+Byte Order:                           Little Endian
+CPU(s):                               20
+On-line CPU(s) list:                  0-19
+Vendor ID:                            GenuineIntel
+Model name:                           12th Gen Intel(R) Core(TM) i7-12700H
+CPU family:                           6
+Model:                                154
+Thread(s) per core:                   2
+Core(s) per socket:                   10
+Socket(s):                            1
+Stepping:                             3
+BogoMIPS:                             5376.01
+Flags:                                fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology tsc_reliable nonstop_tsc cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves avx_vnni vnmi umip waitpkg gfni vaes vpclmulqdq rdpid movdiri movdir64b fsrm md_clear serialize flush_l1d arch_capabilities
+Virtualization:                       VT-x
+Hypervisor vendor:                    Microsoft
+Virtualization type:                  full
+L1d cache:                            480 KiB (10 instances)
+L1i cache:                            320 KiB (10 instances)
+L2 cache:                             12.5 MiB (10 instances)
+L3 cache:                             24 MiB (1 instance)
+NUMA node(s):                         1
+NUMA node0 CPU(s):                    0-19
+Vulnerability Gather data sampling:   Not affected
+Vulnerability Itlb multihit:          Not affected
+Vulnerability L1tf:                   Not affected
+Vulnerability Mds:                    Not affected
+Vulnerability Meltdown:               Not affected
+Vulnerability Mmio stale data:        Not affected
+Vulnerability Reg file data sampling: Vulnerable: No microcode
+Vulnerability Retbleed:               Mitigation; Enhanced IBRS
+Vulnerability Spec rstack overflow:   Not affected
+Vulnerability Spec store bypass:      Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:             Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:             Mitigation; Enhanced / Automatic IBRS; IBPB conditional; RSB filling; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop
+Vulnerability Srbds:                  Not affected
+Vulnerability Tsx async abort:        Not affected
+
+===== modinfo_tcp_bbr: modinfo tcp_bbr
+filename:       /lib/modules/6.6.87.2-microsoft-standard-WSL2/kernel/net/ipv4/tcp_bbr.ko
+description:    TCP BBR (Bottleneck Bandwidth and RTT)
+license:        Dual BSD/GPL
+author:         Soheil Hassas Yeganeh <soheil@google.com>
+author:         Yuchung Cheng <ycheng@google.com>
+author:         Neal Cardwell <ncardwell@google.com>
+author:         Van Jacobson <vanj@google.com>
+depends:        
+retpoline:      Y
+intree:         Y
+name:           tcp_bbr
+vermagic:       6.6.87.2-microsoft-standard-WSL2 SMP preempt mod_unload modversions 
+
+===== iperf3: iperf3 --version
+iperf 3.16 (cJSON 1.7.15)
+Linux Yu 6.6.87.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025 x86_64
+Optional features available: CPU affinity setting, IPv6 flow label, SCTP, TCP congestion algorithm setting, sendfile / zerocopy, socket pacing, authentication, bind to device, support IPv4 don't fragment, POSIX threads
+
+===== iproute2: ip -V
+ip utility, iproute2-6.1.0, libbpf 1.3.0
+
+===== sysctl_snd: ip netns exec snd sysctl net.ipv4.tcp_no_metrics_save net.ipv4.tcp_rmem net.ipv4.tcp_wmem net.ipv4.tcp_congestion_control net.ipv4.tcp_available_congestion_control
+net.ipv4.tcp_no_metrics_save = 1
+net.ipv4.tcp_rmem = 4096	131072	16777216
+net.ipv4.tcp_wmem = 4096	16384	16777216
+net.ipv4.tcp_congestion_control = cubic
+net.ipv4.tcp_available_congestion_control = reno cubic bbr
+
+===== sysctl_root: sysctl net.core.rmem_max net.core.wmem_max
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+
+===== ethtool_s0: ip netns exec snd ethtool -k s0
+Features for s0:
+rx-checksumming: on
+tx-checksumming: on
+	tx-checksum-ipv4: off [fixed]
+	tx-checksum-ip-generic: on
+	tx-checksum-ipv6: off [fixed]
+	tx-checksum-fcoe-crc: off [fixed]
+	tx-checksum-sctp: on
+scatter-gather: on
+	tx-scatter-gather: on
+	tx-scatter-gather-fraglist: on
+tcp-segmentation-offload: off
+	tx-tcp-segmentation: off
+	tx-tcp-ecn-segmentation: off
+	tx-tcp-mangleid-segmentation: off
+	tx-tcp6-segmentation: off
+generic-segmentation-offload: off
+generic-receive-offload: off
+large-receive-offload: off [fixed]
+rx-vlan-offload: on
+tx-vlan-offload: on
+ntuple-filters: off [fixed]
+receive-hashing: off [fixed]
+highdma: on
+rx-vlan-filter: off [fixed]
+vlan-challenged: off [fixed]
+tx-lockless: on [fixed]
+netns-local: off [fixed]
+tx-gso-robust: off [fixed]
+tx-fcoe-segmentation: off [fixed]
+tx-gre-segmentation: on
+tx-gre-csum-segmentation: on
+tx-ipxip4-segmentation: on
+tx-ipxip6-segmentation: on
+tx-udp_tnl-segmentation: on
+tx-udp_tnl-csum-segmentation: on
+tx-gso-partial: off [fixed]
+tx-tunnel-remcsum-segmentation: off [fixed]
+tx-sctp-segmentation: on
+tx-esp-segmentation: off [fixed]
+tx-udp-segmentation: on
+tx-gso-list: on
+fcoe-mtu: off [fixed]
+tx-nocache-copy: off
+loopback: off [fixed]
+rx-fcs: off [fixed]
+rx-all: off [fixed]
+tx-vlan-stag-hw-insert: on
+rx-vlan-stag-hw-parse: on
+rx-vlan-stag-filter: off [fixed]
+l2-fwd-offload: off [fixed]
+hw-tc-offload: off [fixed]
+esp-hw-offload: off [fixed]
+esp-tx-csum-hw-offload: off [fixed]
+rx-udp_tunnel-port-offload: off [fixed]
+tls-hw-tx-offload: off [fixed]
+tls-hw-rx-offload: off [fixed]
+rx-gro-hw: off [fixed]
+tls-hw-record: off [fixed]
+rx-gro-list: off
+macsec-hw-offload: off [fixed]
+rx-udp-gro-forwarding: off
+hsr-tag-ins-offload: off [fixed]
+hsr-tag-rm-offload: off [fixed]
+hsr-fwd-offload: off [fixed]
+hsr-dup-offload: off [fixed]
+
+===== ethtool_r0: ip netns exec rtr ethtool -k r0
+Features for r0:
+rx-checksumming: on
+tx-checksumming: on
+	tx-checksum-ipv4: off [fixed]
+	tx-checksum-ip-generic: on
+	tx-checksum-ipv6: off [fixed]
+	tx-checksum-fcoe-crc: off [fixed]
+	tx-checksum-sctp: on
+scatter-gather: on
+	tx-scatter-gather: on
+	tx-scatter-gather-fraglist: on
+tcp-segmentation-offload: off
+	tx-tcp-segmentation: off
+	tx-tcp-ecn-segmentation: off
+	tx-tcp-mangleid-segmentation: off
+	tx-tcp6-segmentation: off
+generic-segmentation-offload: off
+generic-receive-offload: off
+large-receive-offload: off [fixed]
+rx-vlan-offload: on
+tx-vlan-offload: on
+ntuple-filters: off [fixed]
+receive-hashing: off [fixed]
+highdma: on
+rx-vlan-filter: off [fixed]
+vlan-challenged: off [fixed]
+tx-lockless: on [fixed]
+netns-local: off [fixed]
+tx-gso-robust: off [fixed]
+tx-fcoe-segmentation: off [fixed]
+tx-gre-segmentation: on
+tx-gre-csum-segmentation: on
+tx-ipxip4-segmentation: on
+tx-ipxip6-segmentation: on
+tx-udp_tnl-segmentation: on
+tx-udp_tnl-csum-segmentation: on
+tx-gso-partial: off [fixed]
+tx-tunnel-remcsum-segmentation: off [fixed]
+tx-sctp-segmentation: on
+tx-esp-segmentation: off [fixed]
+tx-udp-segmentation: on
+tx-gso-list: on
+fcoe-mtu: off [fixed]
+tx-nocache-copy: off
+loopback: off [fixed]
+rx-fcs: off [fixed]
+rx-all: off [fixed]
+tx-vlan-stag-hw-insert: on
+rx-vlan-stag-hw-parse: on
+rx-vlan-stag-filter: off [fixed]
+l2-fwd-offload: off [fixed]
+hw-tc-offload: off [fixed]
+esp-hw-offload: off [fixed]
+esp-tx-csum-hw-offload: off [fixed]
+rx-udp_tunnel-port-offload: off [fixed]
+tls-hw-tx-offload: off [fixed]
+tls-hw-rx-offload: off [fixed]
+rx-gro-hw: off [fixed]
+tls-hw-record: off [fixed]
+rx-gro-list: off
+macsec-hw-offload: off [fixed]
+rx-udp-gro-forwarding: off
+hsr-tag-ins-offload: off [fixed]
+hsr-tag-rm-offload: off [fixed]
+hsr-fwd-offload: off [fixed]
+hsr-dup-offload: off [fixed]
+
+===== ethtool_r1: ip netns exec rtr ethtool -k r1
+Features for r1:
+rx-checksumming: on
+tx-checksumming: on
+	tx-checksum-ipv4: off [fixed]
+	tx-checksum-ip-generic: on
+	tx-checksum-ipv6: off [fixed]
+	tx-checksum-fcoe-crc: off [fixed]
+	tx-checksum-sctp: on
+scatter-gather: on
+	tx-scatter-gather: on
+	tx-scatter-gather-fraglist: on
+tcp-segmentation-offload: off
+	tx-tcp-segmentation: off
+	tx-tcp-ecn-segmentation: off
+	tx-tcp-mangleid-segmentation: off
+	tx-tcp6-segmentation: off
+generic-segmentation-offload: off
+generic-receive-offload: off
+large-receive-offload: off [fixed]
+rx-vlan-offload: on
+tx-vlan-offload: on
+ntuple-filters: off [fixed]
+receive-hashing: off [fixed]
+highdma: on
+rx-vlan-filter: off [fixed]
+vlan-challenged: off [fixed]
+tx-lockless: on [fixed]
+netns-local: off [fixed]
+tx-gso-robust: off [fixed]
+tx-fcoe-segmentation: off [fixed]
+tx-gre-segmentation: on
+tx-gre-csum-segmentation: on
+tx-ipxip4-segmentation: on
+tx-ipxip6-segmentation: on
+tx-udp_tnl-segmentation: on
+tx-udp_tnl-csum-segmentation: on
+tx-gso-partial: off [fixed]
+tx-tunnel-remcsum-segmentation: off [fixed]
+tx-sctp-segmentation: on
+tx-esp-segmentation: off [fixed]
+tx-udp-segmentation: on
+tx-gso-list: on
+fcoe-mtu: off [fixed]
+tx-nocache-copy: off
+loopback: off [fixed]
+rx-fcs: off [fixed]
+rx-all: off [fixed]
+tx-vlan-stag-hw-insert: on
+rx-vlan-stag-hw-parse: on
+rx-vlan-stag-filter: off [fixed]
+l2-fwd-offload: off [fixed]
+hw-tc-offload: off [fixed]
+esp-hw-offload: off [fixed]
+esp-tx-csum-hw-offload: off [fixed]
+rx-udp_tunnel-port-offload: off [fixed]
+tls-hw-tx-offload: off [fixed]
+tls-hw-rx-offload: off [fixed]
+rx-gro-hw: off [fixed]
+tls-hw-record: off [fixed]
+rx-gro-list: off
+macsec-hw-offload: off [fixed]
+rx-udp-gro-forwarding: off
+hsr-tag-ins-offload: off [fixed]
+hsr-tag-rm-offload: off [fixed]
+hsr-fwd-offload: off [fixed]
+hsr-dup-offload: off [fixed]
+
+===== ethtool_c0: ip netns exec rcv ethtool -k c0
+Features for c0:
+rx-checksumming: on
+tx-checksumming: on
+	tx-checksum-ipv4: off [fixed]
+	tx-checksum-ip-generic: on
+	tx-checksum-ipv6: off [fixed]
+	tx-checksum-fcoe-crc: off [fixed]
+	tx-checksum-sctp: on
+scatter-gather: on
+	tx-scatter-gather: on
+	tx-scatter-gather-fraglist: on
+tcp-segmentation-offload: off
+	tx-tcp-segmentation: off
+	tx-tcp-ecn-segmentation: off
+	tx-tcp-mangleid-segmentation: off
+	tx-tcp6-segmentation: off
+generic-segmentation-offload: off
+generic-receive-offload: off
+large-receive-offload: off [fixed]
+rx-vlan-offload: on
+tx-vlan-offload: on
+ntuple-filters: off [fixed]
+receive-hashing: off [fixed]
+highdma: on
+rx-vlan-filter: off [fixed]
+vlan-challenged: off [fixed]
+tx-lockless: on [fixed]
+netns-local: off [fixed]
+tx-gso-robust: off [fixed]
+tx-fcoe-segmentation: off [fixed]
+tx-gre-segmentation: on
+tx-gre-csum-segmentation: on
+tx-ipxip4-segmentation: on
+tx-ipxip6-segmentation: on
+tx-udp_tnl-segmentation: on
+tx-udp_tnl-csum-segmentation: on
+tx-gso-partial: off [fixed]
+tx-tunnel-remcsum-segmentation: off [fixed]
+tx-sctp-segmentation: on
+tx-esp-segmentation: off [fixed]
+tx-udp-segmentation: on
+tx-gso-list: on
+fcoe-mtu: off [fixed]
+tx-nocache-copy: off
+loopback: off [fixed]
+rx-fcs: off [fixed]
+rx-all: off [fixed]
+tx-vlan-stag-hw-insert: on
+rx-vlan-stag-hw-parse: on
+rx-vlan-stag-filter: off [fixed]
+l2-fwd-offload: off [fixed]
+hw-tc-offload: off [fixed]
+esp-hw-offload: off [fixed]
+esp-tx-csum-hw-offload: off [fixed]
+rx-udp_tunnel-port-offload: off [fixed]
+tls-hw-tx-offload: off [fixed]
+tls-hw-rx-offload: off [fixed]
+rx-gro-hw: off [fixed]
+tls-hw-record: off [fixed]
+rx-gro-list: off
+macsec-hw-offload: off [fixed]
+rx-udp-gro-forwarding: off
+hsr-tag-ins-offload: off [fixed]
+hsr-tag-rm-offload: off [fixed]
+hsr-fwd-offload: off [fixed]
+hsr-dup-offload: off [fixed]
+
