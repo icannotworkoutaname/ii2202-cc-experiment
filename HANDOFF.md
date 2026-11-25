@@ -12,6 +12,7 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
 python3 analysis/analyze.py            # reads runs/, writes analysis/out/
 python3 analysis/pilot_plot.py pilot   # pilot traces -> pilot/pilot_traces.png
+python3 analysis/report_figures.py     # report figures -> final_draft/report_source/figures/
 ```
 
 On Ubuntu, install `python3-venv` first. Checked on 2026-11-23: a fresh venv
@@ -43,6 +44,7 @@ does (see section 7).
 | `analysis/parse.py` | Parsers for one run directory |
 | `analysis/analyze.py` | All metrics, tables, tests and figures |
 | `analysis/pilot_plot.py` | Pilot figure and 30-s BBR share blocks |
+| `analysis/report_figures.py` | The two report figures (`loss-goodput.pdf`, `competition.pdf`) from `analysis/out/*_runs.csv` |
 | `analysis/out/` | Generated results (section 5) |
 
 ## 3. Testbed
@@ -128,7 +130,9 @@ lengths were chosen from the pilot runs.
 | Steady state (Part B) | BBR share in eight 30-s blocks over 60–300 s; "settled" if the last block is within 0.10 of the first. All metrics are also recomputed over the last 120 s (180–300 s) |
 | Tests | Exact two-sided Mann–Whitney U (`scipy.stats.mannwhitneyu`, `method="exact"`), n = 5 per group. The smallest possible p with 5 vs 5 is 2/252 ≈ 0.0079. `ranges_overlap` says whether the two groups' value ranges overlap |
 
-Reference lines in `fig_A.png`: Mathis model with C = 1.31, MSS 1448 B, RTT 50 ms;
+Reference lines in `fig_A.png`: Mathis model with C = 0.93 (random loss, delayed
+ACKs; the receiver acknowledged 2.4–2.8 data segments per ACK in the lossy CUBIC and
+Reno runs), MSS 1448 B, RTT 50 ms;
 "header limit" 95.6 Mb/s = 100 Mb/s × 1448 / 1514 (payload per Ethernet frame).
 
 Files in `analysis/out/`:

@@ -80,15 +80,15 @@ A TCP congestion-control algorithm must keep a link busy while limiting delay an
 
 \subsection{Background and Rationale}
 
-TCP congestion control affects delivered application throughput (goodput), queueing delay, and capacity available to other senders. A loss-based algorithm reduces its congestion window after a drop, even if the drop occurs on a path with spare capacity. A deep drop-tail queue can also sustain long delays while goodput remains high \cite{allman2009,xu2023,gettys2012}. Because BBR controls sending from estimates of bottleneck bandwidth and propagation RTT, it can respond differently to random loss and to competing traffic \cite{cardwell2017}. Measuring goodput, delay, and sharing on the same path puts those responses in context.
+TCP congestion control affects delivered application throughput (goodput), queueing delay, and capacity available to other senders. A loss-based algorithm reduces its congestion window after a drop, even if the drop occurs on a path with spare capacity. A deep drop-tail queue can also sustain long delays while goodput remains high \cite{allman2009,xu2023,gettys2012}. Because BBR controls sending from estimates of bottleneck bandwidth and propagation RTT, it can respond differently to random loss and to competing traffic \cite{cardwell2017}.
 
 \subsection{Theory and Related Work}
 
-Reno increases its congestion window by about one segment per round trip in congestion avoidance and roughly halves it after detecting a loss \cite{allman2009}. CUBIC also reacts to loss. It typically retains 70\% of its window and bases subsequent growth on elapsed time since the reduction, with a Reno-friendly region when the cubic window would grow too slowly \cite{xu2023}. Under the assumptions of sustained Reno-style congestion avoidance, fixed RTT, sufficient receiver window, and light to moderate independent loss, the Mathis model gives goodput proportional to $\mathrm{MSS}/(\mathrm{RTT}\sqrt{p})$ \cite{mathis1997}. It provides a reference for the loss sweep.
+Reno increases its congestion window by about one segment per round trip in congestion avoidance and roughly halves it after detecting a loss \cite{allman2009}. CUBIC also reacts to loss, but it typically keeps 70\% of its window and then grows it as a cubic function of the time since the reduction, falling back to a Reno-friendly rate when that growth would be too slow \cite{xu2023}. Under the assumptions of sustained Reno-style congestion avoidance, fixed RTT, sufficient receiver window, and light to moderate independent loss, the Mathis model gives goodput proportional to $\mathrm{MSS}/(\mathrm{RTT}\sqrt{p})$ \cite{mathis1997}, which we use as a reference for the loss sweep.
 
 BBRv1 probes for available bandwidth and periodically drains inflight data to refresh its minimum RTT estimate \cite{cardwell2017}. Its probes can cause losses at a shallow buffer even though its single-flow goodput can remain high under low random loss \cite{cao2019}. Jaeger et al. observed BBR dominance in shallow queues and a growing CUBIC share in deeper queues \cite{jaeger2019}. Ware et al. linked the split to BBR's inflight cap and to the backlog sustained by loss-based competitors \cite{ware2019}.
 
-Those studies used different rates, RTTs, and kernels. They motivate a comparison that records the loss response, sharing, retransmissions, and delay percentiles together on a specified path. We make that comparison for the Linux implementations on a 100 Mb/s, 50 ms bottleneck.
+These studies used different rates, RTTs, and kernels, so their results are hard to compare directly. We measure the loss response, sharing, retransmissions, and delay percentiles of the Linux implementations on one 100 Mb/s, 50 ms bottleneck.
 
 \subsection{Research Problem, Aim, and Research Questions}
 
@@ -116,7 +116,7 @@ Our aim was to quantify how algorithm choice and random loss affect a single bul
 
 \subsection{Research Design and Methodological Rationale}
 
-We ran a controlled quantitative experiment in two parts (Table~\ref{tab:design}). Part A crossed algorithm and random loss at a fixed queue size to compare isolated responses (RQ1). Part B varied queue size while holding the competing pair fixed and removing injected loss, so changes in sharing and performance could be related to the queue setting (RQ2--RQ3). One run was the unit of observation. Five runs per condition provided a check on repeatability. The two parts estimate responses to separate factors on one path. A joint loss-by-queue effect is outside the design.
+We ran a controlled quantitative experiment in two parts (Table~\ref{tab:design}). Part A crossed algorithm and random loss at a fixed queue size to compare isolated responses (RQ1). Part B varied queue size while holding the competing pair fixed and removing injected loss, so changes in sharing and performance could be related to the queue setting (RQ2--RQ3). One run was the unit of observation, and five runs per condition gave a check on repeatability. Because each part varies a single factor, joint loss-by-queue effects are outside the design.
 
 \begin{table}[!htbp]
 \centering
@@ -132,11 +132,11 @@ B & One BBR and one CUBIC flow & 0\% & 0.25, 1, 4 & 300 s each & 15 \\
 \end{tabularx}
 \end{table}
 
-Linux namespaces let the experiment use the kernel implementations while controlling the bottleneck and keeping traffic on one host. A packet-level simulator would require matching its TCP models to the Linux versions, and measurements on a live path would make it harder to control random loss and queue depth independently. We chose loss levels spanning a clean baseline and progressively impaired paths, guided by the predicted decline of Reno-style goodput and the low-loss regime in Cao et al. \cite{mathis1997,cao2019}. Queue sizes bracketed the shallow and deep regimes observed by Jaeger et al. \cite{jaeger2019}. The source of variation was controlled in each part, while the emulated path and sustained flows define the scope of the findings.
+Linux namespaces let the experiment use the kernel implementations while controlling the bottleneck and keeping traffic on one host. A packet-level simulator would require matching its TCP models to the Linux versions, and measurements on a live path would make it harder to control random loss and queue depth independently. We chose loss levels spanning a clean baseline and progressively impaired paths, guided by the predicted decline of Reno-style goodput and the low-loss regime in Cao et al. \cite{mathis1997,cao2019}. Queue sizes bracketed the shallow and deep regimes observed by Jaeger et al. \cite{jaeger2019}.
 
 \subsection{Testbed, Software, and Data Sources}
 
-We collected the measurements on 23 November 2026 on one Intel Core i7-12700H host with 20 logical CPUs, using Ubuntu 24.04 in WSL2 and kernel \texttt{6.6.87.2-microsoft-standard-WSL2}. The kernel supplied BBRv1, CUBIC, and Reno. The experiment used iperf3 3.16 for bulk TCP transfers and iproute2 6.1.0 for namespaces, queue configuration, and TCP socket statistics. This setup replaced the bare-metal Linux machine specified in the plan. The validation checks and CPU measurements below were used to assess the WSL2 testbed.
+We collected the measurements on 23 November 2026 on one Intel Core i7-12700H host with 20 logical CPUs, using Ubuntu 24.04 in WSL2 and kernel \texttt{6.6.87.2-microsoft-standard-WSL2}. The kernel supplied BBRv1, CUBIC, and Reno. The experiment used iperf3 3.16 for bulk TCP transfers and iproute2 6.1.0 for namespaces, queue configuration, and TCP socket statistics. This setup replaced the bare-metal Linux machine specified in the plan, so we used the validation checks and CPU measurements below to test whether WSL2 limited the measurements.
 
 \begin{figure}[!htbp]
 \centering
@@ -160,7 +160,7 @@ We collected the measurements on 23 November 2026 on one Intel Core i7-12700H ho
 
 The links in Figure~\ref{fig:testbed} used a 1,500-byte MTU. The router's receiver-facing egress (\texttt{r1}) used a token bucket filter (TBF) at 100 Mb/s with a 4,542-byte burst and a byte-limited drop-tail queue. The nominal BDP was $100\,\mathrm{Mb/s}\times 0.050\,\mathrm{s}/8=625{,}000$ bytes, giving queue limits of 156,250, 625,000, and 2,500,000 bytes. On router egress toward the sender (\texttt{r0}), \texttt{netem} added 50 ms on the acknowledgement (ACK) path. In Part A, a separate \texttt{netem} on sender egress (\texttt{s0}) applied independent random packet loss before the TBF. It was also installed at 0\% loss to keep that queueing configuration consistent across Part A. Each \texttt{netem} used a 10,000-packet limit.
 
-The source data were scripted transfers and kernel measurements in the isolated testbed. The 75 scheduled runs included every planned combination. Separate validation and pilot runs were used to calibrate the testbed and set the analysis windows.
+The 75 scheduled runs covered every planned combination. Separate validation and pilot runs calibrated the testbed and set the analysis windows.
 
 \subsection{Work Procedure and Data Collection}
 
@@ -174,15 +174,18 @@ The source data were scripted transfers and kernel measurements in the isolated 
 
 \textbf{Inclusion and windows.} The driver required error-free iperf3 results, receiver JSON, the requested congestion-control algorithm, and per-core CPU busy below 50\%. A Reno zero-injection attempt was rejected after a concurrent process drove a core to 100\% busy. Its valid retry was included. Across the 75 retained runs, the idle RTT medians ranged from 50.20 to 50.40 ms, the reverse-path delay queue recorded zero drops, and the maximum per-core CPU busy reached 21.8\% in Part A and 19.2\% in Part B.
 
-The first client launch defined $t=0$ for each run. We used $(20,120]$ s for Part A and $(60,300]$ s for Part B. Receiver interval times were aligned using the corresponding client's recorded launch time. For continuous ping, the send time was estimated by subtracting RTT from the reply timestamp. Valid replies in the windows averaged approximately 66--80 per second across runs.
+The first client launch defined $t=0$ for each run. We used $(20,120]$ s for Part A and $(60,300]$ s for Part B. Receiver interval times were aligned using the corresponding client's recorded launch time. For continuous ping, the send time was estimated by subtracting RTT from the reply timestamp. Per-run averages ranged from 66 to 80 valid replies per second within the windows.
 
 \textbf{Metrics.} For each flow, we summed receiver payload bytes from intervals ending in the analysis window, multiplied by eight, and divided by the summed durations of those intervals. This gave goodput in bits per second, which we report in Mb/s. A rate of 95.6 Mb/s is an approximate payload ceiling for 1,448 payload bytes per 1,514-byte frame at 100 Mb/s. For each flow's data socket, which we identified by its local port, we calculated $1{,}000\,\Delta\texttt{retrans}/\Delta\texttt{data\_segs\_out}$ using the first and last \texttt{ss} sample in the window.
 
-We subtracted the run's median idle RTT from each returned probe's RTT and took P50, P95, and P99 of those differences. We also converted TBF backlog $b$ in bytes to a queueing-delay estimate $8b/(100\times 10^6)$ seconds. The two \texttt{netem} drop counters and the TBF drop counter distinguish drop locations. The ICMP probes measure path delay, including the queue shared by both flows in Part B.
+We subtracted the run's median idle RTT from each returned probe's RTT and took P50, P95, and P99 of those differences. We also converted TBF backlog $b$ in bytes to a queueing-delay estimate $8b/(100\times 10^6)$ seconds. The two \texttt{netem} drop counters and the TBF drop counter distinguish drop locations. TBF drops are reported as the counter increase within the analysis window, so they exclude drops during the warm-up. The ICMP probes measure path delay, including the queue shared by both flows in Part B.
 
 For Part B, with $x_B$ and $x_C$ denoting per-flow goodputs over the window, aggregate goodput was $x_B+x_C$, BBR share was $x_B/(x_B+x_C)$, and Jain's index was $(x_B+x_C)^2/[2(x_B^2+x_C^2)]$ \cite{jain1984}. The index ranges from 0.5 for a one-sided allocation to 1 for an even split. We also checked BBR's share of received bytes across eight 30 s blocks. The rule for a settled run was an absolute difference of at most 0.10 between the first and last blocks. To check sensitivity to the window, we recomputed share, Jain's index, aggregate goodput, and P50 and P95 excess RTT over $(180,300]$ s.
 
-\textbf{Comparison and reproducibility.} We summarized conditions with the median and interquartile interval $[Q_1,Q_3]$ across runs. The result plots show individual runs and medians. We compared the observed ranges and used selected two-sided Mann--Whitney $U$ tests with SciPy's exact method to assess separation between groups of five runs. We report unadjusted $p$ values alongside the magnitude of the contrasts. The Mathis reference uses $p$ as a probability, RTT of 50 ms, MSS of 1,448 bytes, and the random-loss constant 1.31 for one ACK per packet \cite{mathis1997}. Appendix~\ref{app:repro} identifies the archived data and Python analysis entry point.
+\textbf{Comparison and reproducibility.} We summarized conditions with the median and interquartile interval $[Q_1,Q_3]$ across runs. The result plots show the median and the range of the five runs. We compared the observed ranges and used selected two-sided Mann--Whitney $U$ tests with SciPy's exact method to assess separation between groups of five runs. We report unadjusted $p$ values alongside the magnitude of the contrasts. The Mathis reference uses $p$ as a probability, RTT of 50 ms, MSS of 1,448 bytes, and the random-loss constant 0.93 for delayed ACKs \cite{mathis1997}. The receiver used delayed ACKs: in the CUBIC and Reno runs with injected loss, each ACK covered 2.4--2.8 data segments on average in the analysis window. Appendix~\ref{app:repro} identifies the archived data and Python analysis entry point.
+
+\subsection{Use of AI Tools}
+We used AI tools for two main purposes in this project. First, we used them to resolve testbed setup problems and script bugs that arose during the experiment. Second, we used them to improve the grammar and wording of the report. Whenever an AI tool modified our code, we checked which parts had changed to make sure that the modifications followed our experimental design and did not deviate from the experimental objectives.
 
 \clearpage
 
@@ -195,13 +198,13 @@ With 0\% injected loss, all three algorithms delivered above 93 Mb/s (Figure~\re
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\linewidth]{figures/loss-goodput.pdf}
-\caption{Goodput by injected loss. Lines connect medians and the dotted line shows the Mathis reference.}
+\caption{Goodput by injected loss. Markers show medians of five runs, bars their range, and the dotted line the Mathis reference.}
 \label{fig:loss}
 \end{figure}
 
 The CUBIC--Reno median gap grew from 0.10 to 0.17 Mb/s between 0.1\% and 2\% loss. Their ranges overlapped at 0.1\% ($U=10$, $p=0.690$). At 2\%, every Reno run exceeded every CUBIC run ($U=0$, $p=0.0079$, CUBIC first). H1's retention thresholds were met, and its predicted narrowing of the gap was unsupported.
 
-Retransmissions rose to about 19--20 per 1,000 data segments at 2\% loss. At 0\% injected loss, BBR, CUBIC, and Reno had median TBF drop counts of 0, 70, and 15, respectively. With injected loss, CUBIC and Reno's P95 excess RTT fell to about 0.1 ms. BBR's P95 fell from 12.3 to 7.6 ms across the sweep.
+Retransmissions rose to about 19--20 per 1,000 data segments at 2\% loss. At 0\% injected loss, BBR, CUBIC, and Reno had median in-window TBF drop counts of 0, 70, and 15, respectively. BBR's drops fell in the first 20 s (median 1,326 over the whole run). With injected loss, the P95 excess RTTs of CUBIC and Reno fell to about 0.1 ms. BBR's P95 fell from 12.3 to 7.6 ms across the sweep.
 
 \input{part-a-table.tex}
 
@@ -214,7 +217,7 @@ Median BBR share decreased across the three queue sizes from 96.8\% through 85.0
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\linewidth]{figures/competition.pdf}
-\caption{BBR share and P95 excess RTT. Small markers show runs, large markers show medians, and the dashed line marks an even split.}
+\caption{BBR share and P95 excess RTT. Markers show medians of five runs and the dashed line marks an even split. The range of the runs is smaller than the markers at every queue size.}
 \label{fig:competition}
 \end{figure}
 
@@ -224,7 +227,7 @@ From 0.25 to 4 BDP, aggregate goodput rose by 3.1 Mb/s and P95 excess RTT rose f
 
 \input{part-b-table.tex}
 
-For both flows, the 0.25 BDP retransmission rates exceeded both deeper queues ($U=25$, $p=0.0079$ for the four comparisons). Median TBF drops were 12,678, 617, and 1,934 as queue size increased. H3 was supported. The largest BBR share coincided with the most queue drops and the lowest excess RTT.
+For both flows, the 0.25 BDP retransmission rates exceeded both deeper queues ($U=25$, $p=0.0079$ for the four comparisons). Median in-window TBF drops were 12,678, 617, and 1,934 as queue size increased. H3 was supported. The largest BBR share coincided with the most queue drops and the lowest excess RTT.
 
 \clearpage
 
@@ -232,37 +235,37 @@ For both flows, the 0.25 BDP retransmission rates exceeded both deeper queues ($
 
 \subsection{Interpretation and Answers to the Research Questions}
 
-\textbf{RQ1.} The random-loss sweep separated BBR's goodput response from those of CUBIC and Reno. At 2\% loss, BBR maintained almost 90 Mb/s while retransmitting about 20 segments per 1,000 sent. Its pacing depends on estimated delivery rate and propagation RTT, allowing it to maintain a high rate while TCP recovers lost data \cite{cardwell2017,cao2019}. CUBIC and Reno reduced their windows in response to loss. The smaller windows are consistent with the near-idle delay percentiles and median zero TBF drops under injected loss. The Mathis reference gives roughly 9.6, 4.3, and 2.1 Mb/s for the three nonzero settings. Both loss-based algorithms followed the broad decline while delivering somewhat less than the reference. Its fixed-RTT and no-timeout assumptions make it an approximate comparison, especially at 2\% \cite{mathis1997}. The small CUBIC--Reno gap changed in the opposite direction from the prediction. With five runs per condition, the evidence supports a similarly large degradation for both algorithms on this path.
+\textbf{RQ1.} At 2\% loss, BBR maintained almost 90 Mb/s while retransmitting about 20 segments per 1,000 sent. Its pacing depends on estimated delivery rate and propagation RTT, allowing it to maintain a high rate while TCP recovers lost data \cite{cardwell2017,cao2019}. CUBIC and Reno reduced their windows after each loss, which is consistent with their near-idle delay percentiles and zero median in-window TBF drops under injected loss. The Mathis reference gives roughly 6.8, 3.0, and 1.5 Mb/s for the three nonzero settings. Both loss-based algorithms followed the broad decline while delivering 8--33\% more than the reference. The model's fixed-RTT and no-timeout assumptions make it an approximate comparison, especially at 2\% \cite{mathis1997}. The CUBIC--Reno gap widened rather than narrowed, but it stayed below 0.2 Mb/s. With five runs per condition, the data show a similarly large degradation for both algorithms on this path.
 
-\textbf{RQ2.} The queue sweep shifted the split from strong BBR dominance to a slight CUBIC advantage. In the shallow queue, the high TBF drop count and CUBIC retransmission rate are consistent with CUBIC repeatedly reducing its window while BBR continued to probe. In the deep queue, CUBIC had room to increase its window and maintain a large backlog. This pattern agrees with the direction observed by Jaeger et al. and with Ware et al.'s explanation linking BBRv1's share to its inflight limit \cite{jaeger2019,ware2019}. The present experiment varied the queue at three points and measured the resulting split. Intermediate queue settings and direct validation of the inflight mechanism remain open.
+\textbf{RQ2.} Growing the queue from 0.25 to 4 BDP moved the split from 96.8\% for BBR to 56.5\% for CUBIC. In the shallow queue, the high TBF drop count and CUBIC retransmission rate are consistent with CUBIC repeatedly reducing its window while BBR continued to probe. In the deep queue, CUBIC had room to increase its window and maintain a large backlog. This pattern agrees with the direction observed by Jaeger et al. and with Ware et al.'s explanation linking BBRv1's share to its inflight limit \cite{jaeger2019,ware2019}. With only three queue sizes, the experiment does not locate where the split crosses 50\%, and it does not measure the inflight mechanism directly.
 
-\textbf{RQ3.} Similar aggregate goodputs concealed very different operating conditions for the two flows and for other traffic using the queue. Moving from 0.25 to 4 BDP improved the average split and reduced retransmissions relative to the shallow queue, but added 181.7 ms to P95 excess RTT. The backlog-based delay rose from 1.9 to 147.6 ms, consistent with persistent queueing in the deep condition. The 1 BDP queue had the fewest TBF drops and the lowest BBR retransmission rate, but still gave BBR 85.0\% of delivered data. These findings give a concrete trade-off among sharing, delay, and loss for the queue sizes tested.
+\textbf{RQ3.} Aggregate goodput varied by only 3.1 Mb/s across the three queue sizes, while the split and the delay varied widely. Moving from 0.25 to 4 BDP improved the average split and reduced retransmissions relative to the shallow queue, but added 181.7 ms to P95 excess RTT. The backlog-based delay rose from 1.9 to 147.6 ms, consistent with persistent queueing in the deep condition. The 1 BDP queue had the fewest TBF drops and the lowest BBR retransmission rate, but still gave BBR 85.0\% of delivered data.
 
 \subsection{Validity, Limitations, and Generalizability}
 
-Resetting the queues and interleaving conditions within each part reduced differences due to run history and time of day. The validation run, stable idle RTT, and CPU samples support the rate and loss settings despite the move to WSL2. One-second CPU averages can miss short scheduling delays, and the effective ping sampling rate was below the requested rate. Differences of a few tenths of a millisecond around zero excess RTT are comparable to idle-RTT variation. The comparison between the deeper and shallower competition queues is much larger than this variation.
+Resetting the queues and interleaving conditions within each part reduced differences due to run history and time of day. The validation run, stable idle RTT, and CPU samples support the rate and loss settings despite the move to WSL2. One-second CPU averages can miss short scheduling delays, and the effective ping sampling rate was below the requested rate. Differences of a few tenths of a millisecond around zero excess RTT are comparable to idle-RTT variation. The delay differences between the competition queues are far larger than this variation.
 
 Excess-RTT percentiles use successful ICMP replies. Drops can remove probes that encounter a full queue, and ping RTT includes timing effects outside the TBF. The backlog samples corroborate the direction of the delay change, with a different sampling interval and estimand. The 30 s block rule detects large changes between the endpoints of the competition window. It can miss shorter oscillations, and Jain's index computed from mean rates can mask temporary starvation even when the window-average split is close to equal \cite{jaeger2019}.
 
 The 75 runs cover the chosen conditions on one emulated host. With five runs per condition, the exact rank tests have only 252 possible allocations and a minimum two-sided $p$ value of $0.0079$ for untied data. The comparisons were unadjusted for multiplicity and have limited precision for smaller contrasts. Alternating the start order exposed each queue to both launch orders and left a three-to-two imbalance. The first-to-last comparison and the last-120-s analysis support the reported ordering, while simultaneous and differently staggered arrivals could lead to different rates.
 
-The findings apply to long-lived Linux BBRv1, CUBIC, and Reno flows on one drop-tail path with fixed capacity and RTT. Injected loss was independent and on the forward path. Deployments with bursty loss, RTT asymmetry, multiple flows, short transfers, or active queue management can produce other results. BBR versions differ in their coexistence behavior \cite{sarpkaya2025}. The three tested queue sizes bound the interval over which the larger share changed hands.
+The findings apply to long-lived Linux BBRv1, CUBIC, and Reno flows on one drop-tail path with fixed capacity and RTT. Injected loss was independent and on the forward path. Deployments with bursty loss, RTT asymmetry, multiple flows, short transfers, or active queue management can produce other results. BBR versions differ in their coexistence behavior \cite{sarpkaya2025}. With three queue sizes, we can only say that BBR's share fell below 50\% somewhere between 1 and 4 BDP.
 
 \subsection{Ethics, Societal Aspects, and Sustainability}
 
-All test transfers and probes stayed within three local namespaces. The isolated setup avoided collecting personal communications and sending bulk test traffic over shared networks. Recording the rejected attempt, validation failure, and full condition set makes the measurement decisions inspectable.
+All test transfers and probes stayed within three local namespaces. The isolated setup avoided collecting personal communications and sending bulk test traffic over shared networks. The repository keeps the rejected attempt, the failed validation run, and every condition, so others can check our measurement decisions.
 
-A shared access link can serve bulk transfers and delay-sensitive activities such as calls. In the shallow-queue condition, the same link delivered high aggregate goodput while one of the competing flows received just over 3\% of the payload rate. In the deep condition, sharing improved while the upper tail of delay grew. Both outcomes matter to operators and users. The equal-throughput reference concerns two sustained flows with equal base RTT, whereas users may have multiple connections and different latency needs.
+A shared access link can serve bulk transfers and delay-sensitive activities such as calls. In the shallow-queue condition, the same link delivered high aggregate goodput while one of the competing flows received just over 3\% of the payload rate. In the deep condition, sharing improved while the upper tail of delay grew. The equal-throughput reference concerns two sustained flows with equal base RTT, whereas users may have multiple connections and different latency needs.
 
-The measurements used an existing host and software emulation. Retransmissions represent additional transmissions for the amount delivered and can increase the resources required to carry traffic. We measured segment counts, goodput, and delay. Energy per delivered byte would require power measurements and explicit accounting for the test host and network equipment.
+The measurements used an existing host and software emulation. Retransmissions add packets without adding goodput, so they increase the resources needed to carry the same data. We measured segment counts, goodput, and delay. Energy per delivered byte would require power measurements and explicit accounting for the test host and network equipment.
 
 \subsection{Implications and Future Work}
 
-On this path, aggregate goodput alone would have hidden the practical difference among the three queue settings. A deployment evaluation should consider per-flow sharing, retransmissions, and delay percentiles together. The immediate follow-up is to test intermediate queue sizes between 1 and 4 BDP with more balanced start-order repeats and longer overlaps. This would locate the change in the split and quantify variation under both launch orders. Repeating the comparison on bare-metal Linux with a newer BBR version and an active queue-management configuration would test whether a more even allocation is possible with less delay.
+On this path, the three queue settings differed by 3.1 Mb/s in aggregate goodput but by 181.7 ms in P95 excess RTT, so an evaluation of a deployment should also report per-flow sharing, retransmissions, and delay percentiles. The immediate follow-up is to test intermediate queue sizes between 1 and 4 BDP with more balanced start-order repeats and longer overlaps. This would locate the change in the split and quantify variation under both launch orders. Repeating the comparison on bare-metal Linux with a newer BBR version and an active queue-management configuration would test whether a more even allocation is possible with less delay.
 
 \section{Conclusion}
 
-On the emulated 100 Mb/s, 50 ms path, BBRv1 retained 96.0\% of baseline goodput at 2\% injected loss, while CUBIC and Reno each retained less than 2\%. BBRv1's median share against CUBIC fell from 96.8\% at 0.25 BDP to 43.5\% at 4 BDP. Aggregate goodput increased by only 3.1 Mb/s across those endpoints, while the deepest queue added substantially more tail delay and the shallowest produced the most retransmissions for both flows. The experiment shows why algorithm and queue comparisons on a shared link need to report delivered rate, sharing, and delay together.
+On the emulated 100 Mb/s, 50 ms path, BBRv1 retained 96.0\% of baseline goodput at 2\% injected loss, while CUBIC and Reno each retained less than 2\%. BBRv1's median share against CUBIC fell from 96.8\% at 0.25 BDP to 43.5\% at 4 BDP. Aggregate goodput increased by only 3.1 Mb/s across those endpoints, while the deepest queue added substantially more tail delay and the shallowest produced the most retransmissions for both flows.
 
 \clearpage
 \bibliographystyle{myIEEEtran}
@@ -273,7 +276,7 @@ On the emulated 100 Mb/s, 50 ms path, BBRv1 retained 96.0\% of baseline goodput 
 \section{Reproducibility Details}
 \label{app:repro}
 
-The archive is \href{https://github.com/icannotworkoutaname/ii2202-cc-experiment/tree/a49b86cd009d5e085079719bca25fa4a075c03f3}{\texttt{ii2202-cc-experiment}} at commit \texttt{a49b86c}. The testbed files used for measurement are in \texttt{5a18ab9}. Some archived run metadata retain the commit ID from before its message was edited. The repository's \texttt{HANDOFF.md} documents that provenance.
+The data and code are archived in the \href{https://github.com/icannotworkoutaname/ii2202-cc-experiment}{\texttt{ii2202-cc-experiment}} repository. The latest version of its main branch contains everything listed below, and its \texttt{HANDOFF.md} describes the layout and the provenance of the run metadata.
 
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.37\linewidth}X@{}}
 \toprule
@@ -291,6 +294,8 @@ Archive location & Contents \\
 Use Python 3.10 or later with the packages in \texttt{requirements.txt}. Run the command below from the experiment checkout to recompute the summaries in a separate directory.
 
 {\ttfamily python3 analysis/analyze.py --runs runs --out /tmp/ii2202-analysis\par}
+
+Figures~\ref{fig:loss} and~\ref{fig:competition} are drawn from those tables by \texttt{analysis/report\_figures.py}.
 
 The reanalysis matched all six archived CSV tables numerically and both archived LaTeX summary tables exactly. The condition totals and actual TCP algorithms were cross-checked against the schedule and each run's metadata.
 

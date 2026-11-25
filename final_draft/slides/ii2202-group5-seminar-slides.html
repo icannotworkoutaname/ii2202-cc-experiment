@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="II2202 Group 5 final seminar: BBRv1, CUBIC and Reno under random loss and different queue sizes.">
+<title>Random Loss, Queue Size, and TCP Congestion Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+/* ==========================================================================
+   VIEWPORT FITTING: MANDATORY BASE STYLES
+   Include in EVERY presentation — this is the foundation that ensures
+   slides fill exactly one viewport height with no overflow or scrollbar.
+   ========================================================================== */
+
+/* --- Reset & Root --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    height: 100%;
+    overflow-x: hidden;
+    /* Prevent pull-to-refresh on mobile interfering with snap */
+    overscroll-behavior: none;
+}
+
+html {
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    /* Prevent FOUC on font load */
+    font-display: optional;
+}
+
+/* --- Core Slide Container --- */
+.slide {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;             /* dvh for mobile browser chrome awareness */
+    overflow: hidden;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;   /* Force stop on each slide (no accidental skip) */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    /* Prevent text selection during swipe */
+    user-select: none;
+}
+
+/* Allow text selection inside content areas */
+.slide-content, .slide-content * {
+    user-select: text;
+}
+
+/* --- Slide Content Wrapper --- */
+.slide-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-height: 100%;
+    overflow: hidden;
+    padding: var(--slide-padding);
+    gap: var(--content-gap);
+    /* Prevent content from punching through slide bounds */
+    contain: layout style;
+}
+
+/* --- Design Token Scale --- */
+:root {
+    /* Typography: fluid scale from mobile to 4K */
+    --title-size:  clamp(1.5rem,  5vw,   4rem);
+    --h2-size:     clamp(1.25rem, 3.5vw, 2.5rem);
+    --h3-size:     clamp(1rem,    2.5vw, 1.75rem);
+    --body-size:   clamp(0.75rem, 1.5vw, 1.125rem);
+    --small-size:  clamp(0.65rem, 1vw,   0.875rem);
+    --label-size:  clamp(0.6rem,  0.9vw, 0.75rem);
+
+    /* Spacing: proportional to viewport */
+    --slide-padding:  clamp(1rem,   4vw,  4rem);
+    --content-gap:    clamp(0.5rem, 2vw,  2rem);
+    --element-gap:    clamp(0.25rem,1vw,  1rem);
+    --card-padding:   clamp(0.75rem,2vw,  2rem);
+
+    /* Radii */
+    --radius-sm:  clamp(4px,  0.5vw, 8px);
+    --radius-md:  clamp(8px,  1vw,   16px);
+    --radius-lg:  clamp(12px, 1.5vw, 24px);
+    --radius-xl:  clamp(16px, 2vw,   32px);
+
+    /* Borders */
+    --border-width: clamp(1px, 0.1vw, 2px);
+
+    /* Motion */
+    --transition-fast:   0.15s ease;
+    --transition-base:   0.3s ease;
+    --transition-slow:   0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-spring: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* --- Typography Defaults (tokens applied) --- */
+h1, .title      { font-size: var(--title-size); line-height: 1.1; letter-spacing: -0.02em; }
+h2, .heading    { font-size: var(--h2-size);    line-height: 1.2; letter-spacing: -0.01em; }
+h3, .subheading { font-size: var(--h3-size);    line-height: 1.3; }
+p, li, .body    { font-size: var(--body-size);  line-height: 1.55; }
+small, .small   { font-size: var(--small-size); line-height: 1.4; }
+.label          { font-size: var(--label-size); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* --- Container Constraints --- */
+/* Prevent any card/box from overflowing its slide */
+.card,
+.container,
+.content-box,
+.panel {
+    max-width:  min(90vw, 1000px);
+    max-height: min(80vh, 700px);
+    overflow: hidden;
+}
+
+/* --- List Layouts --- */
+.feature-list,
+.bullet-list {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.4rem, 1vh, 1rem);
+    list-style: none;
+}
+
+.feature-list li,
+.bullet-list li {
+    font-size: var(--body-size);
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+}
+
+/* --- Grid System --- */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+    gap: clamp(0.5rem, 1.5vw, 1rem);
+    width: 100%;
+}
+
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
+
+/* --- Image Handling --- */
+img,
+.image-container {
+    max-width: 100%;
+    max-height: min(50vh, 400px);
+    object-fit: contain;
+    display: block;
+}
+
+.image-fill img,
+.image-fill .image-container {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    object-fit: cover;
+}
+
+/* Background image slides */
+.slide[data-bg-image] {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* --- Navigation UI --- */
+.nav-dots {
+    position: fixed;
+    right: clamp(0.75rem, 2vw, 1.5rem);
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 100;
+}
+
+.nav-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.3;
+    cursor: pointer;
+    transition: var(--transition-base);
+    transition-property: opacity, transform;
+    border: none;
+    padding: 0;
+}
+
+.nav-dot.active,
+.nav-dot:hover {
+    opacity: 1;
+    transform: scale(1.3);
+}
+
+.progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: currentColor;
+    transition: width var(--transition-base);
+    z-index: 101;
+    transform-origin: left;
+}
+
+.keyboard-hint {
+    position: fixed;
+    bottom: clamp(0.5rem, 1.5vh, 1rem);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: var(--small-size);
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 99;
+    white-space: nowrap;
+}
+
+/* --- Decorative / Pure-visual elements --- */
+.decorative {
+    pointer-events: none;
+    user-select: none;
+    aria-hidden: true;
+}
+
+/* --- Responsive Breakpoints --- */
+
+/* Short viewport (laptop with taskbar, projectors) */
+@media (max-height: 700px) {
+    :root {
+        --slide-padding: clamp(0.75rem, 3vw,  2rem);
+        --content-gap:   clamp(0.4rem,  1.5vw, 1rem);
+        --title-size:    clamp(1.25rem, 4.5vw, 2.5rem);
+        --h2-size:       clamp(1rem,    3vw,   1.75rem);
+    }
+}
+
+/* Very short (800×600 projectors, embedded iframes) */
+@media (max-height: 600px) {
+    :root {
+        --slide-padding: clamp(0.5rem,  2.5vw, 1.5rem);
+        --content-gap:   clamp(0.3rem,  1vw,   0.75rem);
+        --title-size:    clamp(1.1rem,  4vw,   2rem);
+        --body-size:     clamp(0.7rem,  1.2vw, 0.95rem);
+    }
+    /* Hide chrome UI to recover vertical space */
+    .nav-dots,
+    .keyboard-hint,
+    .decorative {
+        display: none;
+    }
+}
+
+/* Extremely short (landscape mobile) */
+@media (max-height: 500px) {
+    :root {
+        --slide-padding: clamp(0.4rem, 2vw,   1rem);
+        --title-size:    clamp(1rem,   3.5vw, 1.5rem);
+        --h2-size:       clamp(0.9rem, 2.5vw, 1.25rem);
+        --body-size:     clamp(0.65rem,1vw,   0.85rem);
+    }
+}
+
+/* Narrow mobile */
+@media (max-width: 600px) {
+    :root {
+        --title-size: clamp(1.25rem, 7vw, 2.5rem);
+    }
+    .grid {
+        grid-template-columns: 1fr;
+    }
+    .two-col,
+    .three-col {
+        flex-direction: column;
+    }
+}
+
+/* High-DPI / Retina — ensure hairlines stay crisp */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .border-hairline { border-width: 0.5px; }
+}
+
+/* Reduced motion — MANDATORY accessibility support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration:        0.01ms !important;
+        animation-iteration-count: 1      !important;
+        transition-duration:       0.2s   !important;
+        scroll-behavior:           auto   !important;
+    }
+    html {
+        scroll-behavior: auto;
+    }
+    /* Keep opacity transitions so entrance animations still work, just instantly */
+    .slide-enter { opacity: 1 !important; transform: none !important; }
+}
+
+/* Dark mode color-scheme hint */
+@media (prefers-color-scheme: dark) {
+    :root { color-scheme: dark; }
+}
+
+/* Print / PDF export */
+@media print {
+    html { scroll-snap-type: none; }
+    .slide {
+        height: 100vh;
+        page-break-after: always;
+        break-after: page;
+    }
+    .nav-dots,
+    .progress-bar,
+    .keyboard-hint {
+        display: none !important;
+    }
+}
+
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+:root {
+  --bg: #f0f4f8; --surface: #ffffff; --surface-2: #e8edf2; --border: #d1d9e2;
+  --text: #1a2332; --text-muted: #4a5568; --accent: #2563eb; --accent-2: #0ea5e9;
+  --c-bbr: #2563eb; --c-cubic: #1e3a8a; --c-reno: #14a3c7; --c-ref: #64748b; --c-delay: #334155; --grid: #dde4ec;
+  --font-display: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; --font-body: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  --shadow-sm: 0 1px 2px rgba(26,35,50,.06);
+  --shadow-md: 0 4px 14px rgba(26,35,50,.08), 0 1px 3px rgba(26,35,50,.06);
+  --shadow-lg: 0 16px 40px rgba(26,35,50,.12);
+  --stat-size: clamp(1.4rem, 3.2vw, 2.6rem); --stat-sm-size: clamp(1rem, 2vw, 1.5rem);
+  --lead-size: clamp(0.95rem, 1.9vw, 1.4rem);
+}
+html { font-size: clamp(16px, 1.04vw, 22px); }  /* scale everything up on 1080p+ projectors */
+body { background: var(--bg); color: var(--text); font-family: var(--font-body); overflow: hidden; }
+.slide { background: var(--bg); }
+.slide-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 60% 50% at 88% 8%, rgba(14,165,233,.10), transparent 70%),
+    radial-gradient(ellipse 50% 45% at 5% 100%, rgba(37,99,235,.08), transparent 70%),
+    linear-gradient(rgba(37,99,235,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37,99,235,.045) 1px, transparent 1px);
+  background-size: auto, auto, 32px 32px, 32px 32px; }
+.slide-content { position: relative; z-index: 1; max-width: min(1560px, 100%); width: 100%; margin: 0 auto;
+  padding: clamp(2.5rem, 7vh, 5rem) clamp(1.5rem, 6vw, 5rem); }
+.label { color: var(--accent); font-weight: 700; }
+.heading { font-family: var(--font-display); font-weight: 800; max-width: 40ch; text-wrap: balance; }
+h1.title { font-family: var(--font-display); font-weight: 800; font-size: clamp(2rem, 5.2vw, 4.4rem); text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 700; font-size: var(--h3-size); }
+.subtitle, .lead { font-size: var(--lead-size); color: var(--text-muted); max-width: 62ch; }
+.small-lead { font-size: var(--body-size); }
+.card { background: var(--surface); border: var(--border-width) solid var(--border); border-radius: var(--radius-md);
+  padding: var(--card-padding); box-shadow: var(--shadow-md); max-width: none; display: flex; flex-direction: column;
+  gap: var(--element-gap); }
+.card p { color: var(--text-muted); font-size: clamp(0.85rem, 1.6vw, 1.2rem); }
+.card-kicker { color: var(--accent) !important; font-weight: 700; font-size: var(--label-size) !important;
+  letter-spacing: .1em; text-transform: uppercase; }
+.card.algo { border-top: 4px solid var(--algo); }
+.card.algo h3 { color: var(--text); }
+.ref-tag { font-size: var(--small-size) !important; color: var(--text-muted); opacity: .8; }
+.callout { font-size: var(--lead-size); border-left: 4px solid var(--accent); padding-left: 1rem; max-width: 72ch; }
+.scope { font-size: var(--small-size); color: var(--text-muted); letter-spacing: .04em; }
+.slide-meta { position: absolute; z-index: 1; left: clamp(1.5rem, 6vw, 5rem); right: clamp(1.5rem, 6vw, 5rem);
+  top: clamp(0.8rem, 2.5vh, 1.6rem); display: flex; justify-content: space-between; font-size: var(--label-size);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); }
+/* title */
+.slide-title .slide-content { gap: clamp(0.8rem, 2.5vh, 1.6rem); }
+.title-stats { display: flex; gap: clamp(1rem, 4vw, 3.5rem); margin-top: clamp(0.5rem, 2vh, 1.5rem);
+  padding-top: clamp(0.8rem, 2vh, 1.4rem); border-top: var(--border-width) solid var(--border); width: fit-content; }
+.title-stats div { display: flex; flex-direction: column; }
+.stat-num { font-family: var(--font-display); font-weight: 800; font-size: var(--stat-size); line-height: 1.05;
+  font-variant-numeric: tabular-nums; }
+.stat-num.sm { font-size: var(--stat-sm-size); }
+.stat-label { font-size: var(--small-size); color: var(--text-muted); }
+.stat-unit { font-size: var(--small-size); color: var(--text-muted); margin-left: .3em; }
+.presenters { font-size: var(--body-size); font-weight: 600; }
+.presenters .sep { font-weight: 400; color: var(--text-muted); margin-left: 1.5em; }
+/* topology */
+.topo { display: grid; grid-template-columns: 1fr auto 1.15fr auto 1fr; align-items: center; gap: clamp(.3rem, 1vw, .8rem); }
+.node { background: var(--surface); border: var(--border-width) solid var(--border); border-radius: var(--radius-md);
+  padding: clamp(.6rem, 1.4vw, 1.1rem); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: .2rem;
+  text-align: center; font-size: var(--body-size); }
+.node-key { border-color: var(--accent); box-shadow: var(--shadow-md); }
+.node span { color: var(--text-muted); }
+.tag { font-style: normal; font-size: var(--label-size); font-weight: 600; color: var(--accent);
+  background: rgba(37,99,235,.08); border-radius: 999px; padding: .15em .7em; margin-top: .3rem; align-self: center; }
+.tag-loss { color: var(--c-delay); background: rgba(51,65,85,.08); }
+.link { display: flex; flex-direction: column; font-size: var(--small-size); font-weight: 600; gap: .3rem; text-align: center; }
+.link .data { color: var(--accent); } .link .ack { color: var(--text-muted); }
+/* timeline */
+.timeline { display: flex; flex-direction: column; gap: clamp(.4rem, 1.2vh, .8rem); }
+.tl-row { display: grid; grid-template-columns: 2rem 1fr; align-items: center; gap: .6rem; }
+.tl-name { font-weight: 800; color: var(--accent); font-size: var(--h3-size); }
+.tl-bar { display: grid; grid-template-columns: var(--warm) 1fr; border-radius: var(--radius-sm); overflow: hidden;
+  box-shadow: var(--shadow-sm); font-size: var(--small-size); font-weight: 600; }
+.tl-bar span { padding: .55em .8em; white-space: nowrap; }
+.warm { background: repeating-linear-gradient(135deg, var(--surface-2) 0 6px, #dfe6ee 6px 12px); color: var(--text-muted); }
+.win { background: var(--accent); color: #fff; }
+/* charts */
+.chart-row { display: grid; grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr); gap: clamp(1rem, 3vw, 2.5rem); align-items: center; }
+.chart-row.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); }
+.chart-fig { background: var(--surface); border: var(--border-width) solid var(--border); border-radius: var(--radius-md);
+  padding: clamp(.6rem, 1.4vw, 1.1rem); box-shadow: var(--shadow-md); min-width: 0; }
+.chart-fig figcaption { font-size: var(--small-size); font-weight: 700; color: var(--text-muted); }
+.chart { width: 100%; height: auto; max-height: 52vh; display: block; }
+.chart text { font-family: var(--font-body); }
+.chart .tick { fill: var(--text-muted); font-size: 13px; }
+.chart .axis { fill: var(--text); font-size: 13px; font-weight: 600; }
+.chart .val { font-size: 15px; font-weight: 800; }
+.chart .gl { stroke: var(--grid); stroke-width: 1; }
+.chart .run { opacity: .38; }
+.chart .med { fill: none; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.chart .med-pt { stroke: var(--surface); stroke-width: 2; }
+.chart .ref, .legend .ref { fill: none; stroke: var(--c-ref); stroke-width: 2.4; stroke-dasharray: .012 .018; stroke-linecap: round; }
+.legend .ref { stroke-dasharray: 1 4; }
+.chart .ref-line { stroke: var(--c-ref); stroke-width: 1.6; stroke-dasharray: 6 5; }
+.chart .ref-label { fill: var(--c-ref); font-size: 12px; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; list-style: none; font-size: var(--small-size);
+  font-weight: 600; margin-bottom: .3rem; }
+.legend li { display: flex; align-items: center; gap: .45rem; }
+.legend svg { width: 1.6em; height: 1.2em; overflow: visible; }
+.side-stats { display: flex; flex-direction: column; gap: clamp(.5rem, 1.6vh, 1rem); }
+.side-head { font-size: var(--label-size); letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
+.stat { background: var(--surface); border: var(--border-width) solid var(--border); border-left: 4px solid var(--algo, var(--accent));
+  border-radius: var(--radius-sm); padding: clamp(.5rem, 1.2vw, .9rem) clamp(.7rem, 1.4vw, 1.1rem); box-shadow: var(--shadow-sm); }
+.stat .stat-label { display: block; font-weight: 600; color: var(--text); }
+.insight { font-size: var(--body-size); color: var(--text-muted); border-left: 4px solid var(--accent); padding-left: .9rem; }
+.concl .bullet-list li { color: var(--text); font-size: clamp(0.85rem, 1.6vw, 1.2rem); }
+.concl .bullet-list li::before { content: "—"; color: var(--accent); font-weight: 800; }
+/* closing */
+.slide-closing .slide-content { justify-content: center; }
+.closing { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.4rem, 7vw, 5.5rem); }
+/* speaker notes (press N) */
+.notes { display: none; position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; max-height: 34vh; overflow: auto;
+  background: rgba(26,35,50,.94); color: #f0f4f8; font-size: var(--small-size); line-height: 1.5;
+  padding: 1rem clamp(1.5rem, 6vw, 5rem); box-shadow: var(--shadow-lg); }
+body.show-notes .notes { display: block; }
+/* entrance animations (animation-patterns.md) */
+[class*="enter-"] { animation-fill-mode: both; animation-duration: .7s; animation-delay: var(--delay, 0s);
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(clamp(16px, 3vh, 32px)); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+@keyframes trace { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.enter-fade-up { animation-name: fadeUp; }
+.enter-fade { animation-name: fadeIn; }
+.enter-pop { animation-name: pop; transform-box: fill-box; transform-origin: center; }
+.enter-trace { animation-name: trace; animation-duration: 1.1s; stroke-dasharray: 1 1; }
+.chart .ref.enter-trace { stroke-dasharray: .012 .018; animation-name: fadeIn; }
+@media (prefers-reduced-motion: reduce) { .enter-trace { stroke-dasharray: none; } }
+@media (max-width: 900px) { .chart-row, .chart-row.two { grid-template-columns: 1fr; } .topo { grid-template-columns: 1fr; } }
+@media print { .notes { display: none !important; } }
+
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Presentation progress" style="color:var(--accent)"></div>
+<nav class="nav-dots" id="navDots" aria-label="Slide navigation" style="color:var(--accent)"></nav>
+<p class="keyboard-hint" aria-hidden="true">← → or Space to navigate · N for notes · F for full screen</p>
+
+<section class="slide slide-title" id="slide-1" role="region" aria-label="Slide 1: Title" data-slide-index="0">
+  <div class="slide-bg" aria-hidden="true"></div>
+  <div class="slide-content">
+
+    <p class="label enter-fade-up">II2202 · Group 5 · Final seminar</p>
+    <h1 class="title enter-fade-up" style="--delay:0.1s">Random Loss, Queue Size,<br>and TCP Congestion Control</h1>
+    <p class="subtitle enter-fade-up" style="--delay:0.2s">Comparing BBRv1, CUBIC, and Reno on an emulated bottleneck</p>
+    <div class="title-stats enter-fade-up" style="--delay:0.35s">
+      <div><span class="stat-num">100 Mb/s</span><span class="stat-label">Bottleneck rate</span></div>
+      <div><span class="stat-num">50 ms</span><span class="stat-label">Base round-trip time</span></div>
+      <div><span class="stat-num">75</span><span class="stat-label">Measured runs</span></div>
+    </div>
+    <p class="presenters enter-fade-up" style="--delay:0.5s">Hongen Wang · Yuanyu Zhang<span class="sep">KTH · Autumn 2026</span></p>
+  </div>
+  <footer class="slide-meta" aria-hidden="true"><span>II2202 · Group 5</span><span>01 / 09</span></footer>
+  <aside class="notes" aria-label="Speaker notes">Hi everyone, we&#x27;re Group 5. Today we compare three TCP congestion control algorithms: BBRv1, CUBIC, and Reno. Everything ran on the real Linux TCP stack, over one emulated network path. We collected the data on 23 November.</aside>
+</section>
+<section class="slide " id="slide-2" role="region" aria-label="Slide 2: Research problem" data-slide-index="1">
+  <div class="slide-bg" aria-hidden="true"></div>
+  <div class="slide-content">
+
+    <p class="label enter-fade-up">Research problem</p>
+    <h2 class="heading enter-fade-up" style="--delay:0.05s">Why loss and queue depth matter</h2>
+    <p class="lead enter-fade-up" style="--delay:0.1s">A busy link can still give one flow very little capacity or impose long delays.</p>
+    <div class="grid grid-2">
+      <article class="card enter-fade-up" style="--delay:0.2s">
+        <p class="card-kicker">RQ1</p><h3>Single-flow loss response</h3>
+        <p>How do goodput, retransmissions, and excess RTT change for BBRv1, CUBIC, and Reno as random loss rises?</p>
+      </article>
+      <article class="card enter-fade-up" style="--delay:0.3s">
+        <p class="card-kicker">RQ2 and RQ3</p><h3>Sharing a bottleneck</h3>
+        <p>How does queue size affect BBRv1–CUBIC sharing, aggregate goodput, retransmissions, and delay?</p>
+      </article>
+    </div>
+    <p class="scope enter-fade-up" style="--delay:0.4s">Scope · One emulated path · Bulk TCP · Drop-tail queue</p>
+  </div>
+  <footer class="slide-meta" aria-hidden="true"><span>II2202 · Group 5</span><span>02 / 09</span></footer>
+  <aside class="notes" aria-label="Speaker notes">So why look at this? A link can be fully used and still treat flows very differently. We asked two kinds of questions. First, one flow on its own: what happens when random loss goes up? Second, two flows sharing a bottleneck: does the queue size change who gets the bandwidth, and what does it cost in delay? The path stays the same throughout, 100 Mb/s with a 50 ms round trip. Our expectations going in were simple. At 2% loss, BBRv1 should keep at least 90% of its goodput, and CUBIC and Reno less than half. With two flows, BBRv1&#x27;s share should drop as the queue gets deeper. The deepest queue should add the most delay. The shallowest should cause the most retransmissions.</aside>
+</section>
+<section class="slide " id="slide-3" role="region" aria-label="Slide 3: Background" data-slide-index="2">
+  <div class="slide-bg" aria-hidden="true"></div>
+  <div class="slide-content">
+
+    <p class="label enter-fade-up">Background</p>
+    <h2 class="heading enter-fade-up" style="--delay:0.05s">How the senders respond to loss</h2>
+    <div class="grid grid-3">
+      <article class="card algo enter-fade-up" style="--delay:0.15s; --algo:var(--c-reno)">
+        <h3>Reno</h3><p>Increases its window by about one segment per RTT. Roughly halves it on loss.</p><p class="ref-tag">RFC 5681</p></article>
+      <article class="card algo enter-fade-up" style="--delay:0.25s; --algo:var(--c-cubic)">
+        <h3>CUBIC</h3><p>Grows its window with a cubic function of time. Keeps about 70% on loss.</p><p class="ref-tag">RFC 9438</p></article>
+      <article class="card algo enter-fade-up" style="--delay:0.35s; --algo:var(--c-bbr)">
+        <h3>BBRv1</h3><p>Estimates delivery bandwidth and minimum RTT. Uses them to pace and limit inflight data.</p><p class="ref-tag">Cardwell et al. (2017)</p></article>
+    </div>
+    <p class="callout enter-fade-up" style="--delay:0.45s">Prior experiments found that buffer depth changes the BBRv1–CUBIC split <span class="ref-tag">Jaeger et al. (2019)</span></p>
+  </div>
+  <footer class="slide-meta" aria-hidden="true"><span>II2202 · Group 5</span><span>03 / 09</span></footer>
+  <aside class="notes" aria-label="Speaker notes">A bit of background. Reno and CUBIC both treat loss as the signal to slow down. Reno roughly halves its window. CUBIC backs off less and grows back faster. The Mathis model gives a rough prediction for Reno: throughput falls with the square root of the loss rate. And when loss is frequent, CUBIC ends up behaving a lot like Reno. BBRv1 is different. It builds a model of bandwidth and round-trip time instead. It still has to resend lost packets, though. Earlier experiments found that buffer size changes how BBR and CUBIC share a link. That&#x27;s why we vary the queue.</aside>
+</section>
+<section class="slide " id="slide-4" role="region" aria-label="Slide 4: Method: testbed" data-slide-index="3">
+  <div class="slide-bg" aria-hidden="true"></div>
+  <div class="slide-content">
+
+    <p class="label enter-fade-up">Method</p>
+    <h2 class="heading enter-fade-up" style="--delay:0.05s">A controlled Linux bottleneck</h2>
+    <p class="lead small-lead enter-fade-up" style="--delay:0.1s">Three network namespaces on one WSL2 host · Ubuntu 24.04 · iperf3 3.16</p>
+    <div class="topo enter-fade-up" style="--delay:0.2s">
+      <div class="node"><strong>Sender</strong><span>iperf3 client(s)</span><em class="tag tag-loss">random loss (Part A)</em></div>
+      <div class="link"><span class="data">Data →</span><span class="ack">← ACKs</span></div>
+      <div class="node node-key"><strong>Router</strong><span>100 Mb/s token bucket</span><em class="tag">50 ms delay on ACK path</em></div>
+      <div class="link"><span class="data">Data →</span><span class="ack">← ACKs</span></div>
+      <div class="node"><strong>Receiver</strong><span>one server per flow</span></div>
+    </div>
+    <div class="grid grid-2">
+      <article class="card enter-fade-up" style="--delay:0.3s">
+        <p class="card-kicker">Part A · 60 single-flow runs</p>
+        <p>BBRv1, CUBIC, or Reno · 120 s<br>0%, 0.1%, 0.5%, or 2% loss · 1 BDP queue</p></article>
+      <article class="card enter-fade-up" style="--delay:0.4s">
+        <p class="card-kicker">Part B · 15 competition runs</p>
+        <p>BBRv1 + CUBIC · 300 s per flow<br>0.25, 1, or 4 BDP queue · no injected loss</p></article>
+    </div>
+    <p class="scope enter-fade-up" style="--delay:0.5s">One bandwidth-delay product (BDP) = 625,000 bytes</p>
+  </div>
+  <footer class="slide-meta" aria-hidden="true"><span>II2202 · Group 5</span><span>04 / 09</span></footer>
+  <aside class="notes" aria-label="Speaker notes">Here&#x27;s the testbed. Three network namespaces on one machine. The router is the bottleneck: a 100 Mb/s token bucket with a plain drop-tail queue. The 50 ms delay sits on the ACK path. In Part A, a separate netem on the sender drops packets at random. Part B has two flows, and the second one starts five seconds after the first. For each queue size, BBR went first in three runs and CUBIC in two. Every condition got five runs, in shuffled order. One caveat: we ran this on WSL2, not on bare metal as we first planned.</aside>
+</section>
+<section class="slide " id="slide-5" role="region" aria-label="Slide 5: Method: analysis" data-slide-index="4">
+  <div class="slide-bg" aria-hidden="true"></div>
+  <div class="slide-content">
+
+    <p class="label enter-fade-up">Method</p>
+    <h2 class="heading enter-fade-up" style="--delay:0.05s">From raw logs to run-level metrics</h2>
+    <p class="lead small-lead enter-fade-up" style="--delay:0.1s">A fixed analysis window after start-up, then five runs per condition.</p>
+    <div class="timeline enter-fade-up" style="--delay:0.2s">
+      <div class="tl-row"><span class="tl-name">A</span><div class="tl-bar" style="--warm:16.67%"><span class="warm">0–20 s</span><span class="win">20–120 s analysis</span></div></div>
+      <div class="tl-row"><span class="tl-name">B</span><div class="tl-bar" style="--warm:20%"><span class="warm">0–60 s</span><span class="win">60–300 s analysis</span></div></div>
+    </div>
+    <div class="grid grid-3">
+      <article class="card enter-fade-up" style="--delay:0.3s"><p class="card-kicker">Receiver JSON</p><p>Payload goodput, share, and Jain’s index</p></article>
+      <article class="card enter-fade-up" style="--delay:0.38s"><p class="card-kicker">TCP socket counters</p><p>Retransmissions per 1,000 outgoing data segments</p></article>
+      <article class="card enter-fade-up" style="--delay:0.46s"><p class="card-kicker">Ping and TBF</p><p>P50, P95, and P99 above idle RTT, plus queue backlog</p></article>
+    </div>
+    <p class="scope enter-fade-up" style="--delay:0.55s">Validation · 50.30 ms idle RTT · 0.494% measured at 0.5% loss · 75 valid runs</p>
+  </div>
+  <footer class="slide-meta" aria-hidden="true"><span>II2202 · Group 5</span><span>05 / 09</span></footer>
+  <aside class="notes" aria-label="Speaker notes">A word on data quality, because our first check failed. At 0.5% loss we only measured 0.078%. Once we capped GSO to one segment, it read 0.494%. After that fix, every validation check passed. One run hit 100% CPU, so we ran it again. For the analysis, we skip the start-up and use a fixed window. In Part B, time counts from the first flow&#x27;s start, and the window ends at 300 seconds. To check that sharing had settled, we compared the first and last 30-second blocks. We also redid the key numbers over just the last 120 seconds. Each run counts once. The medians and ranges you&#x27;ll see are over those five runs.</aside>
+</section>
+<section class="slide " id="slide-6" role="region" aria-label="Slide 6: Results RQ1" data-slide-index="5">
+  <div class="slide-bg" aria-hidden="true"></div>
+  <div class="slide-content">
+
+    <p class="label enter-fade-up">Results · RQ1</p>
+    <h2 class="heading enter-fade-up" style="--delay:0.05s">BBRv1 kept 96% of its goodput at 2% loss</h2>
+    <div class="chart-row">
+      <figure class="chart-fig enter-fade-up" style="--delay:0.1s">
+        <ul class="legend" role="list"><li><svg viewBox="0 0 18 14" aria-hidden="true"><line x1="0" x2="18" y1="7" y2="7" stroke="var(--c-bbr)" stroke-width="2.5"/><circle class="" cx="9.0" cy="7.0" r="5" fill="var(--c-bbr)" /></svg>BBRv1</li><li><svg viewBox="0 0 18 14" aria-hidden="true"><line x1="0" x2="18" y1="7" y2="7" stroke="var(--c-cubic)" stroke-width="2.5"/><rect class="" x="4.0" y="2.0" width="10" height="10" fill="var(--c-cubic)" /></svg>CUBIC</li><li><svg viewBox="0 0 18 14" aria-hidden="true"><line x1="0" x2="18" y1="7" y2="7" stroke="var(--c-reno)" stroke-width="2.5"/><polygon class="" points="9.0,1.0 3.0,11.8 15.0,11.8" fill="var(--c-reno)" /></svg>Reno</li><li><svg viewBox="0 0 18 14" aria-hidden="true"><line x1="0" x2="18" y1="7" y2="7" class="ref" /></svg>Mathis reference</li></ul>
+        <svg class="chart" viewBox="0 0 660 330" role="img" aria-labelledby="lossTitle lossDesc">
+<title id="lossTitle">Goodput by injected loss</title>
+<desc id="lossDesc">Median goodput of five runs per condition on a log scale. BBRv1 stays near 90 Mb/s; CUBIC and Reno fall to under 2 Mb/s at 2% loss, slightly above the Mathis reference.</desc>
+<line class="gl" x1="62" x2="646" y1="254.7" y2="254.7"/>
+<text class="tick" x="52" y="258.7" text-anchor="end">2</text>
+<line class="gl" x1="62" x2="646" y1="200.9" y2="200.9"/>
+<text class="tick" x="52" y="204.9" text-anchor="end">5</text>
+<line class="gl" x1="62" x2="646" y1="160.2" y2="160.2"/>
+<text class="tick" x="52" y="164.2" text-anchor="end">10</text>
+<line class="gl" x1="62" x2="646" y1="119.6" y2="119.6"/>
+<text class="tick" x="52" y="123.6" text-anchor="end">20</text>
+<line class="gl" x1="62" x2="646" y1="65.8" y2="65.8"/>
+<text class="tick" x="52" y="69.8" text-anchor="end">50</text>
+<line class="gl" x1="62" x2="646" y1="25.1" y2="25.1"/>
+<text class="tick" x="52" y="29.1" text-anchor="end">100</text>
+<text class="tick" x="135.0" y="302" text-anchor="middle">0%</text>
+<text class="tick" x="281.0" y="302" text-anchor="middle">0.1%</text>
+<text class="tick" x="427.0" y="302" text-anchor="middle">0.5%</text>
+<text class="tick" x="573.0" y="302" text-anchor="middle">2%</text>
+<text class="axis" x="354.0" y="324" text-anchor="middle">Injected random loss</text>
+<text class="axis" transform="translate(16 146.0) rotate(-90)" text-anchor="middle">Goodput (Mb/s, log scale)</text>
+<polyline class="ref enter-trace" style="--delay:0.9s" pathLength="1" points="281.0,182.8 427.0,230.0 573.0,270.7"/>
+<circle class="run" cx="111.6" cy="29.1" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="113.8" cy="29.1" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="116.0" cy="29.1" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="118.2" cy="29.1" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="120.4" cy="29.0" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="257.6" cy="30.2" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="259.8" cy="30.0" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="262.0" cy="30.0" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="264.2" cy="30.0" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="266.4" cy="30.0" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="403.6" cy="31.1" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="405.8" cy="30.8" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="408.0" cy="30.8" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="410.2" cy="30.8" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="412.4" cy="30.6" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="549.6" cy="31.6" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="551.8" cy="31.5" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="554.0" cy="31.5" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="556.2" cy="31.5" r="3" fill="var(--c-bbr)" />
+<circle class="run" cx="558.4" cy="31.5" r="3" fill="var(--c-bbr)" />
+<g class="series">
+<polyline class="med enter-trace" style="--delay:0.2s" pathLength="1" points="116.0,29.1 262.0,30.0 408.0,30.8 554.0,31.5" stroke="var(--c-bbr)"/>
+<circle class="med-pt enter-pop" cx="116.0" cy="29.1" r="6.5" fill="var(--c-bbr)" style="--delay:0.35s"/>
+<circle class="med-pt enter-pop" cx="262.0" cy="30.0" r="6.5" fill="var(--c-bbr)" style="--delay:0.43s"/>
+<circle class="med-pt enter-pop" cx="408.0" cy="30.8" r="6.5" fill="var(--c-bbr)" style="--delay:0.51s"/>
+<circle class="med-pt enter-pop" cx="554.0" cy="31.5" r="6.5" fill="var(--c-bbr)" style="--delay:0.59s"/>
+</g>
+<rect class="run" x="127.6" y="24.9" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="129.8" y="24.9" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="132.0" y="24.9" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="134.2" y="24.9" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="136.4" y="24.8" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="273.6" y="167.2" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="275.8" y="163.9" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="278.0" y="163.9" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="280.2" y="161.7" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="282.4" y="160.1" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="419.6" y="221.2" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="421.8" y="218.3" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="424.0" y="215.4" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="426.2" y="215.3" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="428.4" y="211.1" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="565.6" y="267.4" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="567.8" y="263.1" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="570.0" y="263.1" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="572.2" y="259.5" width="6" height="6" fill="var(--c-cubic)" />
+<rect class="run" x="574.4" y="259.2" width="6" height="6" fill="var(--c-cubic)" />
+<g class="series">
+<polyline class="med enter-trace" style="--delay:0.4s" pathLength="1" points="135.0,27.9 281.0,166.9 427.0,218.4 573.0,266.1" stroke="var(--c-cubic)"/>
+<rect class="med-pt enter-pop" x="128.5" y="21.4" width="13.0" height="13.0" fill="var(--c-cubic)" style="--delay:0.55s"/>
+<rect class="med-pt enter-pop" x="274.5" y="160.4" width="13.0" height="13.0" fill="var(--c-cubic)" style="--delay:0.63s"/>
+<rect class="med-pt enter-pop" x="420.5" y="211.9" width="13.0" height="13.0" fill="var(--c-cubic)" style="--delay:0.71s"/>
+<rect class="med-pt enter-pop" x="566.5" y="259.6" width="13.0" height="13.0" fill="var(--c-cubic)" style="--delay:0.79s"/>
+</g>
+<polygon class="run" points="149.6,24.3 146.0,30.8 153.2,30.8" fill="var(--c-reno)" />
+<polygon class="run" points="151.8,24.3 148.2,30.8 155.4,30.8" fill="var(--c-reno)" />
+<polygon class="run" points="154.0,24.3 150.4,30.8 157.6,30.8" fill="var(--c-reno)" />
+<polygon class="run" points="156.2,24.3 152.6,30.8 159.8,30.8" fill="var(--c-reno)" />
+<polygon class="run" points="158.4,24.3 154.8,30.7 162.0,30.7" fill="var(--c-reno)" />
+<polygon class="run" points="295.6,165.0 292.0,171.5 299.2,171.5" fill="var(--c-reno)" />
+<polygon class="run" points="297.8,164.5 294.2,171.0 301.4,171.0" fill="var(--c-reno)" />
+<polygon class="run" points="300.0,162.6 296.4,169.1 303.6,169.1" fill="var(--c-reno)" />
+<polygon class="run" points="302.2,155.4 298.6,161.9 305.8,161.9" fill="var(--c-reno)" />
+<polygon class="run" points="304.4,152.8 300.8,159.2 308.0,159.2" fill="var(--c-reno)" />
+<polygon class="run" points="441.6,215.3 438.0,221.8 445.2,221.8" fill="var(--c-reno)" />
+<polygon class="run" points="443.8,215.0 440.2,221.5 447.4,221.5" fill="var(--c-reno)" />
+<polygon class="run" points="446.0,214.7 442.4,221.1 449.6,221.1" fill="var(--c-reno)" />
+<polygon class="run" points="448.2,212.4 444.6,218.9 451.8,218.9" fill="var(--c-reno)" />
+<polygon class="run" points="450.4,207.6 446.8,214.1 454.0,214.1" fill="var(--c-reno)" />
+<polygon class="run" points="587.6,257.9 584.0,264.3 591.2,264.3" fill="var(--c-reno)" />
+<polygon class="run" points="589.8,257.5 586.2,264.0 593.4,264.0" fill="var(--c-reno)" />
+<polygon class="run" points="592.0,256.8 588.4,263.3 595.6,263.3" fill="var(--c-reno)" />
+<polygon class="run" points="594.2,255.2 590.6,261.7 597.8,261.7" fill="var(--c-reno)" />
+<polygon class="run" points="596.4,254.8 592.8,261.3 600.0,261.3" fill="var(--c-reno)" />
+<g class="series">
+<polyline class="med enter-trace" style="--delay:0.6s" pathLength="1" points="154.0,27.9 300.0,166.2 446.0,218.3 592.0,260.4" stroke="var(--c-reno)"/>
+<polygon class="med-pt enter-pop" points="154.0,20.1 146.2,34.1 161.8,34.1" fill="var(--c-reno)" style="--delay:0.75s"/>
+<polygon class="med-pt enter-pop" points="300.0,158.4 292.2,172.5 307.8,172.5" fill="var(--c-reno)" style="--delay:0.83s"/>
+<polygon class="med-pt enter-pop" points="446.0,210.5 438.2,224.5 453.8,224.5" fill="var(--c-reno)" style="--delay:0.91s"/>
+<polygon class="med-pt enter-pop" points="592.0,252.6 584.2,266.7 599.8,266.7" fill="var(--c-reno)" style="--delay:0.99s"/>
+</g>
+</svg>
+      </figure>
+      <div class="side-stats">
+        <p class="side-head enter-fade-up" style="--delay:0.2s">At 2% injected loss</p>
+        <div class="stat enter-fade-up" style="--delay:0.3s; --algo:var(--c-bbr)"><span class="stat-num">89.60</span><span class="stat-unit">Mb/s</span><span class="stat-label">BBRv1</span></div>
+        <div class="stat enter-fade-up" style="--delay:0.4s; --algo:var(--c-cubic)"><span class="stat-num">1.65</span><span class="stat-unit">Mb/s</span><span class="stat-label">CUBIC</span></div>
+        <div class="stat enter-fade-up" style="--delay:0.5s; --algo:var(--c-reno)"><span class="stat-num">1.81</span><span class="stat-unit">Mb/s</span><span class="stat-label">Reno</span></div>
+      </div>
+    </div>
+    <p class="insight enter-fade-up" style="--delay:0.6s">At 0% injected loss, all three exceeded 93 Mb/s. BBRv1 had the lowest P95 excess RTT.</p>
+  </div>
+  <footer class="slide-meta" aria-hidden="true"><span>II2202 · Group 5</span><span>06 / 09</span></footer>
+  <aside class="notes" aria-label="Speaker notes">First result, one flow at a time. Note the log scale on the y-axis. BBRv1 barely moves. At 2% loss it still keeps 96% of its goodput. CUBIC and Reno fall fast. At 2% they keep under 2% of their baseline, 1.7 and 1.9 percent. The dotted line is the Mathis prediction, using the constant for delayed ACKs. Both sit a little above it. One thing we got wrong: we expected the gap between CUBIC and Reno to shrink at high loss. It grew instead, from 0.10 to 0.17 Mb/s. Small, but the wrong direction. And without injected loss, BBRv1 had the lowest delay: 12.3 ms of P95 excess RTT, against about 48 for CUBIC and 47 for Reno. At 2% loss, all three resent about 19 or 20 segments per thousand.</aside>
+</section>
+<section class="slide " id="slide-7" role="region" aria-label="Slide 7: Results RQ2 and RQ3" data-slide-index="6">
+  <div class="slide-bg" aria-hidden="true"></div>
+  <div class="slide-content">
+
+    <p class="label enter-fade-up">Results · RQ2 and RQ3</p>
+    <h2 class="heading enter-fade-up" style="--delay:0.05s">A deeper queue evened the split but added 182&nbsp;ms of P95 delay</h2>
+    <div class="chart-row two">
+      <figure class="chart-fig enter-fade-up" style="--delay:0.1s">
+        <figcaption>BBRv1 share of goodput</figcaption>
+        <svg class="chart" viewBox="0 0 320 300" role="img" aria-labelledby="bbrshareT bbrshareD">
+<title id="bbrshareT">BBR goodput share by queue size</title><desc id="bbrshareD">Median BBR share falls from 96.8% at 0.25 BDP to 85.0% at 1 BDP and 43.5% at 4 BDP.</desc>
+<line class="gl" x1="58" x2="308" y1="250.0" y2="250.0"/>
+<line class="gl" x1="58" x2="308" y1="199.1" y2="199.1"/>
+<line class="gl" x1="58" x2="308" y1="97.3" y2="97.3"/>
+<line class="gl" x1="58" x2="308" y1="46.4" y2="46.4"/>
+<text class="tick" x="49" y="254.0" text-anchor="end">0</text>
+<text class="tick" x="49" y="203.1" text-anchor="end">25</text>
+<text class="tick" x="49" y="152.2" text-anchor="end">50</text>
+<text class="tick" x="49" y="101.3" text-anchor="end">75</text>
+<text class="tick" x="49" y="50.4" text-anchor="end">100</text>
+<line class="ref-line" x1="58" x2="308" y1="148.2" y2="148.2"/>
+<text class="ref-label" x="64" y="142.2" text-anchor="start">even split</text>
+<text class="tick" x="99.7" y="272" text-anchor="middle">0.25</text>
+<text class="tick" x="183.0" y="272" text-anchor="middle">1</text>
+<text class="tick" x="266.3" y="272" text-anchor="middle">4</text>
+<text class="axis" x="183.0" y="294" text-anchor="middle">Queue size (BDP)</text>
+<text class="axis" transform="translate(15 138.0) rotate(-90)" text-anchor="middle">BBR goodput share (%)</text>
+<circle class="run" cx="94.7" cy="53.1" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="97.2" cy="53.0" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="99.7" cy="53.0" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="102.2" cy="52.9" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="104.7" cy="52.9" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="178.0" cy="76.9" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="180.5" cy="76.9" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="183.0" cy="76.8" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="185.5" cy="76.7" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="188.0" cy="76.3" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="261.3" cy="161.9" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="263.8" cy="161.4" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="266.3" cy="161.4" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="268.8" cy="158.7" r="3.2" fill="var(--c-bbr)" />
+<circle class="run" cx="271.3" cy="158.6" r="3.2" fill="var(--c-bbr)" />
+<polyline class="med enter-trace" style="--delay:0.2s" pathLength="1" points="99.7,53.0 183.0,76.8 266.3,161.4" stroke="var(--c-bbr)"/>
+<circle class="med-pt enter-pop" cx="99.7" cy="53.0" r="7" fill="var(--c-bbr)" style="--delay:0.30s"/>
+<text class="val enter-fade" style="--delay:0.50s; fill:var(--c-bbr)" x="99.7" y="40.0" text-anchor="middle">96.8%</text>
+<circle class="med-pt enter-pop" cx="183.0" cy="76.8" r="7" fill="var(--c-bbr)" style="--delay:0.45s"/>
+<text class="val enter-fade" style="--delay:0.65s; fill:var(--c-bbr)" x="183.0" y="63.8" text-anchor="middle">85.0%</text>
+<circle class="med-pt enter-pop" cx="266.3" cy="161.4" r="7" fill="var(--c-bbr)" style="--delay:0.60s"/>
+<text class="val enter-fade" style="--delay:0.80s; fill:var(--c-bbr)" x="266.3" y="185.4" text-anchor="middle">43.5%</text>
+</svg>
+      </figure>
+      <figure class="chart-fig enter-fade-up" style="--delay:0.2s">
+        <figcaption>P95 excess RTT</figcaption>
+        <svg class="chart" viewBox="0 0 320 300" role="img" aria-labelledby="excessrttp95T excessrttp95D">
+<title id="excessrttp95T">P95 excess RTT by queue size</title><desc id="excessrttp95D">Median P95 excess RTT rises from 11.0 ms at 0.25 BDP to 42.8 ms at 1 BDP and 192.7 ms at 4 BDP.</desc>
+<line class="gl" x1="58" x2="308" y1="250.0" y2="250.0"/>
+<line class="gl" x1="58" x2="308" y1="199.1" y2="199.1"/>
+<line class="gl" x1="58" x2="308" y1="148.2" y2="148.2"/>
+<line class="gl" x1="58" x2="308" y1="97.3" y2="97.3"/>
+<line class="gl" x1="58" x2="308" y1="46.4" y2="46.4"/>
+<text class="tick" x="49" y="254.0" text-anchor="end">0</text>
+<text class="tick" x="49" y="203.1" text-anchor="end">50</text>
+<text class="tick" x="49" y="152.2" text-anchor="end">100</text>
+<text class="tick" x="49" y="101.3" text-anchor="end">150</text>
+<text class="tick" x="49" y="50.4" text-anchor="end">200</text>
+<text class="tick" x="99.7" y="272" text-anchor="middle">0.25</text>
+<text class="tick" x="183.0" y="272" text-anchor="middle">1</text>
+<text class="tick" x="266.3" y="272" text-anchor="middle">4</text>
+<text class="axis" x="183.0" y="294" text-anchor="middle">Queue size (BDP)</text>
+<text class="axis" transform="translate(15 138.0) rotate(-90)" text-anchor="middle">P95 excess RTT (ms)</text>
+<circle class="run" cx="94.7" cy="238.9" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="97.2" cy="238.9" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="99.7" cy="238.8" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="102.2" cy="238.8" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="104.7" cy="238.8" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="178.0" cy="206.7" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="180.5" cy="206.6" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="183.0" cy="206.4" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="185.5" cy="206.2" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="188.0" cy="206.2" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="261.3" cy="54.8" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="263.8" cy="54.8" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="266.3" cy="53.8" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="268.8" cy="52.8" r="3.2" fill="var(--c-delay)" />
+<circle class="run" cx="271.3" cy="52.7" r="3.2" fill="var(--c-delay)" />
+<polyline class="med enter-trace" style="--delay:0.2s" pathLength="1" points="99.7,238.8 183.0,206.4 266.3,53.8" stroke="var(--c-delay)"/>
+<circle class="med-pt enter-pop" cx="99.7" cy="238.8" r="7" fill="var(--c-delay)" style="--delay:0.30s"/>
+<text class="val enter-fade" style="--delay:0.50s; fill:var(--c-delay)" x="99.7" y="225.8" text-anchor="middle">11.0</text>
+<circle class="med-pt enter-pop" cx="183.0" cy="206.4" r="7" fill="var(--c-delay)" style="--delay:0.45s"/>
+<text class="val enter-fade" style="--delay:0.65s; fill:var(--c-delay)" x="194.0" y="224.4" text-anchor="start">42.8</text>
+<circle class="med-pt enter-pop" cx="266.3" cy="53.8" r="7" fill="var(--c-delay)" style="--delay:0.60s"/>
+<text class="val enter-fade" style="--delay:0.80s; fill:var(--c-delay)" x="266.3" y="40.8" text-anchor="middle">192.7</text>
+</svg>
+      </figure>
+      <div class="side-stats">
+        <div class="stat enter-fade-up" style="--delay:0.3s"><span class="stat-num sm">92.1 → 95.3</span><span class="stat-unit">Mb/s</span><span class="stat-label">Aggregate goodput</span></div>
+        <div class="stat enter-fade-up" style="--delay:0.4s"><span class="stat-num sm">0.533 → 0.984</span><span class="stat-label">Jain’s index</span></div>
+        <div class="stat enter-fade-up" style="--delay:0.5s"><span class="stat-num sm">0.25 BDP</span><span class="stat-label">Most retransmissions, for both flows</span></div>
+      </div>
+    </div>
+    <p class="insight enter-fade-up" style="--delay:0.6s">One BBRv1 flow and one CUBIC flow · five runs per queue · no injected loss</p>
+  </div>
+  <footer class="slide-meta" aria-hidden="true"><span>II2202 · Group 5</span><span>07 / 09</span></footer>
+  <aside class="notes" aria-label="Speaker notes">Now two flows, one BBRv1 and one CUBIC. On the left is BBR&#x27;s share of the goodput. The dashed line is an even split. With a shallow queue, a quarter of a BDP, BBR takes almost everything, about 97%. At 1 BDP it still has 85%. At 4 BDP it flips. BBR gets 43.5%, so CUBIC now has the bigger part. The right chart shows the price. Going from 0.25 to 4 BDP adds about 182 ms to the P95 delay. Retransmissions peak in the shallow queue: about 6 per thousand for BBR, 14 for CUBIC. All 15 runs passed our stability check, and the pattern holds over the last 120 seconds as well.</aside>
+</section>
+<section class="slide " id="slide-8" role="region" aria-label="Slide 8: Conclusion and future work" data-slide-index="7">
+  <div class="slide-bg" aria-hidden="true"></div>
+  <div class="slide-content">
+
+    <p class="label enter-fade-up">Conclusion and future work</p>
+    <h2 class="heading enter-fade-up" style="--delay:0.05s">Aggregate goodput barely moved; sharing and delay did</h2>
+    <div class="grid grid-2 concl">
+      <article class="card enter-fade-up" style="--delay:0.15s">
+        <p class="card-kicker">What the experiment showed</p>
+        <ul class="bullet-list">
+          <li>BBRv1 kept most of its goodput at 2% random loss. CUBIC and Reno each retained below 2%.</li>
+          <li>At 0.25 BDP, BBRv1 dominated the split and both flows retransmitted most often.</li>
+          <li>At 4 BDP, sharing was more even and P95 excess RTT was 181.7 ms higher than at 0.25 BDP.</li>
+        </ul></article>
+      <article class="card enter-fade-up" style="--delay:0.3s">
+        <p class="card-kicker">Next experiments</p>
+        <ul class="bullet-list">
+          <li>Test intermediate queue sizes with longer overlaps and balanced starts.</li>
+          <li>Compare a newer BBR version and active queue management on bare-metal Linux.</li>
+        </ul></article>
+    </div>
+    <p class="scope enter-fade-up" style="--delay:0.45s">Scope · BBRv1 · Equal 50 ms base RTTs · One 100 Mb/s drop-tail bottleneck</p>
+  </div>
+  <footer class="slide-meta" aria-hidden="true"><span>II2202 · Group 5</span><span>08 / 09</span></footer>
+  <aside class="notes" aria-label="Speaker notes">To wrap up. Within the range we tested, the picture is quite clear. BBRv1 held up under random loss. CUBIC and Reno did not. In a shared bottleneck, queue size decided who got the bandwidth. And total throughput stayed high the whole time, even when the split was very unequal. So throughput alone would have hidden all of this. The deepest queue gave the fairest split, but also the longest delay. For our hypotheses: the retention part of H1 held, H2 held at both ends of the range, and H3&#x27;s delay and retransmission patterns held. What we didn&#x27;t test is loss and queue size together, or exactly where the two shares cross.</aside>
+</section>
+<section class="slide slide-closing" id="slide-9" role="region" aria-label="Slide 9: Questions" data-slide-index="8">
+  <div class="slide-bg" aria-hidden="true"></div>
+  <div class="slide-content" style="align-items:center;text-align:center;">
+
+    <h2 class="closing enter-fade-up">Questions?</h2>
+    <p class="presenters enter-fade-up" style="--delay:0.15s">Hongen Wang · Yuanyu Zhang</p>
+  </div>
+  <footer class="slide-meta" aria-hidden="true"><span>II2202 · Group 5</span><span>09 / 09</span></footer>
+  <aside class="notes" aria-label="Speaker notes">That&#x27;s all from us. The appendix of the report points to the raw data and the analysis scripts, if you&#x27;d like to check our numbers. We&#x27;re happy to take questions. For example, about the losses in the shallow queue, how much the analysis window matters, or how newer BBR versions differ.</aside>
+</section>
+<script>
+// SlidePresentation class from the slides skill (references/html-template.md)
+class SlidePresentation {
+    constructor(options = {}) {
+        this.slides = Array.from(document.querySelectorAll('.slide'));
+        this.current = 0;
+        this.isAnimating = false;
+        this.touchStartY = 0;
+        this.touchStartX = 0;
+
+        // Options
+        this.dotColor    = options.dotColor    || 'var(--accent)';
+        this.accentColor = options.accentColor || 'var(--accent)';
+
+        this.init();
+    }
+
+    init() {
+        if (!this.slides.length) return;
+        this.buildNavDots();
+        this.buildProgressBar();
+        this.bindKeyboard();
+        this.bindTouch();
+        this.bindWheel();
+        this.bindHash();
+        this.observeSlides();
+        this.goTo(this.getInitialSlide(), false);
+    }
+
+    // ── Navigation Dots ──────────────────────────────────────────────────────
+    buildNavDots() {
+        const nav = document.getElementById('navDots');
+        if (!nav) return;
+        this.slides.forEach((_, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'nav-dot';
+            btn.dataset.index = i;
+            btn.setAttribute('aria-label', `Go to slide ${i + 1}`);
+            btn.addEventListener('click', () => this.goTo(i));
+            nav.appendChild(btn);
+        });
+        this.dots = Array.from(nav.querySelectorAll('.nav-dot'));
+    }
+
+    // ── Progress Bar ─────────────────────────────────────────────────────────
+    buildProgressBar() {
+        this.progressBar = document.getElementById('progressBar');
+    }
+
+    updateProgress() {
+        if (!this.progressBar) return;
+        const pct = this.slides.length > 1
+            ? (this.current / (this.slides.length - 1)) * 100
+            : 100;
+        this.progressBar.style.width = `${pct}%`;
+        this.progressBar.setAttribute('aria-valuenow', Math.round(pct));
+
+        if (this.dots) {
+            this.dots.forEach((d, i) => d.classList.toggle('active', i === this.current));
+        }
+    }
+
+    // ── Navigation ───────────────────────────────────────────────────────────
+    goTo(index, animate = true) {
+        const target = Math.max(0, Math.min(index, this.slides.length - 1));
+        if (target === this.current && animate) return;
+
+        this.current = target;
+        const slide = this.slides[target];
+        slide.scrollIntoView({ behavior: animate ? 'smooth' : 'instant' });
+        this.updateProgress();
+        this.triggerEntranceAnimations(slide);
+
+        // Update URL hash without triggering scroll
+        history.replaceState(null, '', `#slide-${target + 1}`);
+
+        // Announce to screen readers
+        const region = slide.getAttribute('aria-label') || `Slide ${target + 1}`;
+        this.announce(region);
+    }
+
+    next() { this.goTo(this.current + 1); }
+    prev() { this.goTo(this.current - 1); }
+
+    getInitialSlide() {
+        const hash = window.location.hash;
+        const match = hash.match(/#slide-(\d+)/);
+        return match ? parseInt(match[1], 10) - 1 : 0;
+    }
+
+    // ── Keyboard ─────────────────────────────────────────────────────────────
+    bindKeyboard() {
+        document.addEventListener('keydown', (e) => {
+            // Don't intercept if user is editing
+            if (e.target.matches('[contenteditable]') || e.target.matches('input, textarea')) return;
+
+            switch (e.key) {
+                case 'ArrowDown': case 'ArrowRight': case ' ': case 'PageDown':
+                    e.preventDefault(); this.next(); break;
+                case 'ArrowUp': case 'ArrowLeft': case 'PageUp':
+                    e.preventDefault(); this.prev(); break;
+                case 'Home':
+                    e.preventDefault(); this.goTo(0); break;
+                case 'End':
+                    e.preventDefault(); this.goTo(this.slides.length - 1); break;
+                case 'Escape':
+                    this.toggleOverview(); break;
+                case 'f': case 'F':
+                    if (!e.ctrlKey && !e.metaKey) this.toggleFullscreen(); break;
+            }
+        });
+    }
+
+    // ── Touch / Swipe ─────────────────────────────────────────────────────────
+    bindTouch() {
+        document.addEventListener('touchstart', (e) => {
+            this.touchStartY = e.touches[0].clientY;
+            this.touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            const dy = this.touchStartY - e.changedTouches[0].clientY;
+            const dx = this.touchStartX - e.changedTouches[0].clientX;
+
+            // Only trigger on predominantly vertical swipe
+            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 40) {
+                dy > 0 ? this.next() : this.prev();
+            }
+        }, { passive: true });
+    }
+
+    // ── Wheel ─────────────────────────────────────────────────────────────────
+    bindWheel() {
+        let wheelTimeout;
+        document.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            clearTimeout(wheelTimeout);
+            wheelTimeout = setTimeout(() => {
+                e.deltaY > 0 ? this.next() : this.prev();
+            }, 50);
+        }, { passive: false });
+    }
+
+    // ── Intersection Observer ──────────────────────────────────────────────────
+    observeSlides() {
+        const opts = { threshold: 0.6 };
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const idx = this.slides.indexOf(entry.target);
+                    if (idx !== -1 && idx !== this.current) {
+                        this.current = idx;
+                        this.updateProgress();
+                        this.triggerEntranceAnimations(entry.target);
+                    }
+                }
+            });
+        }, opts);
+        this.slides.forEach(s => obs.observe(s));
+    }
+
+    // ── Entrance Animations ───────────────────────────────────────────────────
+    triggerEntranceAnimations(slide) {
+        // Reset elements that should re-animate on revisit
+        const animated = slide.querySelectorAll('[class*="enter-"]');
+        animated.forEach(el => {
+            el.style.animation = 'none';
+            el.offsetHeight; // reflow
+            el.style.animation = '';
+        });
+    }
+
+    // ── Hash navigation ───────────────────────────────────────────────────────
+    bindHash() {
+        window.addEventListener('hashchange', () => {
+            const idx = this.getInitialSlide();
+            this.goTo(idx);
+        });
+    }
+
+    // ── Overview mode (ESC) ──────────────────────────────────────────────────
+    toggleOverview() {
+        document.body.classList.toggle('overview-mode');
+        if (document.body.classList.contains('overview-mode')) {
+            document.querySelectorAll('.slide').forEach(s => {
+                s.style.scrollSnapAlign = 'none';
+                s.style.height = '20vh';
+                s.style.cursor = 'pointer';
+                s.onclick = () => {
+                    const idx = parseInt(s.dataset.slideIndex || 0);
+                    this.exitOverview();
+                    setTimeout(() => this.goTo(idx), 50);
+                };
+            });
+            document.documentElement.style.scrollSnapType = 'none';
+        } else {
+            this.exitOverview();
+        }
+    }
+
+    exitOverview() {
+        document.body.classList.remove('overview-mode');
+        document.querySelectorAll('.slide').forEach(s => {
+            s.style.scrollSnapAlign = '';
+            s.style.height = '';
+            s.style.cursor = '';
+            s.onclick = null;
+        });
+        document.documentElement.style.scrollSnapType = '';
+    }
+
+    // ── Fullscreen ────────────────────────────────────────────────────────────
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen?.();
+        } else {
+            document.exitFullscreen?.();
+        }
+    }
+
+    // ── Screen reader live region ─────────────────────────────────────────────
+    announce(message) {
+        let region = document.getElementById('sr-live');
+        if (!region) {
+            region = document.createElement('div');
+            region.id = 'sr-live';
+            region.setAttribute('aria-live', 'polite');
+            region.setAttribute('aria-atomic', 'true');
+            region.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;';
+            document.body.appendChild(region);
+        }
+        region.textContent = '';
+        requestAnimationFrame(() => { region.textContent = message; });
+    }
+}
+
+// Auto-init
+document.addEventListener('DOMContentLoaded', () => {
+    window.presentation = new SlidePresentation();
+});
+
+
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey) document.body.classList.toggle('show-notes');
+});
+
+</script>
+</body>
+</html>

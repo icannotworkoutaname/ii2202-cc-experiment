@@ -25,7 +25,9 @@ import parse  # noqa: E402
 
 WIN = {"A": (20, 120), "B": (60, 300)}
 LAST120 = (180, 300)
-MSS_BITS, RTT_S, MATHIS_C = 1448 * 8, 0.050, 1.31
+# Mathis et al. (1997) constant for random loss with delayed ACKs: the receiver
+# acknowledged 2.4-2.8 data segments per ACK in the lossy CUBIC/Reno runs.
+MSS_BITS, RTT_S, MATHIS_C = 1448 * 8, 0.050, 0.93
 CC_ORDER = ["bbr", "cubic", "reno"]
 STYLE = {  # fixed categorical order + shape as a second channel for print
     "bbr": dict(color="#2a78d6", marker="o", label="BBR"),
@@ -233,7 +235,7 @@ def fig_A(A, out):
     ax.set_yscale("log")
     mx = [i for i, x in enumerate(losses) if x > 0]
     mathis = [MATHIS_C * MSS_BITS / (RTT_S * np.sqrt(losses[i] / 100)) / 1e6 for i in mx]
-    ax.plot(mx, mathis, ls="--", color=MUTED, lw=1, zorder=2, label="Mathis (C = 1.31)")
+    ax.plot(mx, mathis, ls="--", color=MUTED, lw=1, zorder=2, label=f"Mathis (C = {MATHIS_C})")
     ax.axhline(95.6, color=MUTED, lw=0.8, ls=":", zorder=2)
     ax.text(len(losses) - 0.5, 95.6, "header limit", color=MUTED, fontsize=7, ha="right", va="bottom")
     axes[0, 0].legend(loc="lower left", fontsize=8)
