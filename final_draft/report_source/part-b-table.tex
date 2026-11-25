@@ -1,0 +1,20 @@
+\begin{table}[!htbp]
+\centering
+\caption{Competition results by queue size. Entries are medians of five run-level values, with interquartile intervals shown for the primary share, goodput, and P95 metrics.}
+\label{tab:comp}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Metric & 0.25 BDP & 1 BDP & 4 BDP \\
+\midrule
+BBR goodput share (\%) & 96.8 [96.7, 96.8] & 85.0 [85.0, 85.1] & 43.5 [43.5, 44.8] \\
+Jain's index & 0.533 & 0.671 & 0.984 \\
+Aggregate goodput (Mb/s) & 92.14 [92.12, 92.14] & 93.21 [93.17, 93.24] & 95.28 [95.27, 95.28] \\
+BBR retx/1,000 & 6.34 & 0.19 & 1.03 \\
+CUBIC retx/1,000 & 14.24 & 1.05 & 0.90 \\
+P50 excess RTT (ms) & 0.0 & 32.9 & 149.7 \\
+P95 excess RTT (ms) & 11.0 [10.9, 11.0] & 42.8 [42.7, 43.0] & 192.7 [191.7, 193.7] \\
+P99 excess RTT (ms) & 12.2 & 47.6 & 199.7 \\
+Mean TBF delay (ms) & 1.9 & 31.5 & 147.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
