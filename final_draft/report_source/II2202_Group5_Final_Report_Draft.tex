@@ -72,7 +72,7 @@ Yuanyu Zhang \textless yuanyu@kth.se\textgreater\par
 
 \unnumberedheading{Abstract}
 
-A TCP congestion-control algorithm must keep a link busy while limiting delay and leaving capacity for competing flows. We tested how independent random loss and bottleneck queue size affect these outcomes on an emulated 100 Mb/s path with a 50 ms base round-trip time. The study comprised 60 single-flow runs of Linux BBRv1, CUBIC, and Reno at four loss levels, and 15 runs in which BBRv1 and CUBIC shared one of three queue sizes. With 2\% injected loss, BBR retained 96.0\% of its no-injection median goodput, compared with 1.7\% for CUBIC and 1.9\% for Reno. In the competition runs, BBR's median goodput share fell from 96.8\% at a quarter of the bandwidth-delay product (BDP) to 43.5\% at 4 BDP. Median run-level P95 excess round-trip time rose from 11.0 to 192.7 ms, while aggregate goodput increased from 92.1 to 95.3 Mb/s. Both algorithms had their highest retransmission rates at the smallest queue. On this path, BBRv1 tolerated the tested random loss, and deeper buffers made the two-flow split more even at a substantial delay cost.
+A TCP congestion-control algorithm must keep a link busy while limiting delay and leaving capacity for competing flows. We tested how independent random loss and bottleneck queue size affect these outcomes on an emulated 100 Mb/s path with a 50 ms base round-trip time. The study comprised 60 single-flow runs of Linux BBRv1, CUBIC, and Reno at four loss levels, and 15 runs in which BBRv1 and CUBIC shared one of three queue sizes. With 2\% injected loss, BBR retained 96.0\% of its no-injection median goodput, compared with 1.7\% for CUBIC and 1.9\% for Reno. In the competition runs, BBR's median goodput share fell from 96.8\% at a quarter of the bandwidth-delay product (BDP) to 43.5\% at 4 BDP. Median run-level P95 excess round-trip time rose from 11.0 to 192.7 ms, while aggregate goodput increased from 92.1 to 95.3 Mb/s. Both algorithms had their highest retransmission rates at the smallest queue. In our setup, BBRv1 tolerated the tested random loss, and deeper buffers made the two-flow split more even at a substantial delay cost.
 
 \newpage
 
@@ -202,9 +202,9 @@ With 0\% injected loss, all three algorithms delivered above 93 Mb/s (Figure~\re
 \label{fig:loss}
 \end{figure}
 
-The CUBIC--Reno median gap grew from 0.10 to 0.17 Mb/s between 0.1\% and 2\% loss. Their ranges overlapped at 0.1\% ($U=10$, $p=0.690$). At 2\%, every Reno run exceeded every CUBIC run ($U=0$, $p=0.0079$, CUBIC first). H1's retention thresholds were met, and its predicted narrowing of the gap was unsupported.
+The CUBIC--Reno median gap grew from 0.10 to 0.17 Mb/s between 0.1\% and 2\% loss. Their ranges overlapped at 0.1\% ($U=10$, $p=0.690$). At 2\%, every Reno run exceeded every CUBIC run ($U=0$, $p=0.0079$, CUBIC first). H1's retention thresholds were met; the predicted narrowing of the gap was not.
 
-Retransmissions rose to about 19--20 per 1,000 data segments at 2\% loss. At 0\% injected loss, BBR, CUBIC, and Reno had median in-window TBF drop counts of 0, 70, and 15, respectively. BBR's drops fell in the first 20 s (median 1,326 over the whole run). With injected loss, the P95 excess RTTs of CUBIC and Reno fell to about 0.1 ms. BBR's P95 fell from 12.3 to 7.6 ms across the sweep.
+Retransmissions rose to about 19--20 per 1,000 data segments at 2\% loss; at 0\% injected loss, BBR, CUBIC, and Reno had median in-window TBF drop counts of 0, 70, and 15, respectively, and BBR's drops arrived in the first 20 s (median 1,326 over the whole run). With injected loss, the P95 excess RTTs of CUBIC and Reno fell to about 0.1 ms. BBR's P95 fell from 12.3 to 7.6 ms across the sweep.
 
 \input{part-a-table.tex}
 
@@ -212,7 +212,7 @@ Retransmissions rose to about 19--20 per 1,000 data segments at 2\% loss. At 0\%
 
 \subsection{RQ2. Goodput Sharing Between BBR and CUBIC}
 
-Median BBR share decreased across the three queue sizes from 96.8\% through 85.0\% to 43.5\% (Figure~\ref{fig:competition} and Table~\ref{tab:comp}). The three observed ranges were disjoint. All pairwise share comparisons gave $U=25$ and $p=0.0079$ when the smaller queue was entered first. The share crossed the even-split reference between the 1 and 4 BDP conditions, supporting H2. Jain's index increased from 0.533 to 0.984. For the last 120 s, the median shares were 96.7\%, 84.8\%, and 43.1\%. All 15 runs met the first-to-last block rule, with a maximum change of 8.5 percentage points.
+Median BBR share decreased across the three queue sizes, from 96.8\% through 85.0\% to 43.5\% (Figure~\ref{fig:competition} and Table~\ref{tab:comp}). The three observed ranges were disjoint, and all pairwise comparisons gave $U=25$ and $p=0.0079$ when the smaller queue was entered first. The share crossed the even-split reference between the 1 and 4 BDP conditions, supporting H2, and Jain's index rose from 0.533 to 0.984. Over the last 120 s the median shares were 96.7\%, 84.8\%, and 43.1\%, so all 15 runs met the first-to-last block rule, with a maximum change of 8.5 percentage points.
 
 \begin{figure}[!htbp]
 \centering
@@ -227,7 +227,7 @@ From 0.25 to 4 BDP, aggregate goodput rose by 3.1 Mb/s and P95 excess RTT rose f
 
 \input{part-b-table.tex}
 
-For both flows, the 0.25 BDP retransmission rates exceeded both deeper queues ($U=25$, $p=0.0079$ for the four comparisons). Median in-window TBF drops were 12,678, 617, and 1,934 as queue size increased. H3 was supported. The largest BBR share coincided with the most queue drops and the lowest excess RTT.
+For both flows the 0.25 BDP retransmission rates exceeded those at the two deeper queues ($U=25$, $p=0.0079$ for the four comparisons), and median in-window TBF drops were 12,678, 617, and 1,934 as the queue grew, which is what H3 predicted. The largest BBR share coincided with the most queue drops and the lowest excess RTT.
 
 \clearpage
 
@@ -235,11 +235,11 @@ For both flows, the 0.25 BDP retransmission rates exceeded both deeper queues ($
 
 \subsection{Interpretation and Answers to the Research Questions}
 
-\textbf{RQ1.} At 2\% loss, BBR maintained almost 90 Mb/s while retransmitting about 20 segments per 1,000 sent. Its pacing depends on estimated delivery rate and propagation RTT, allowing it to maintain a high rate while TCP recovers lost data \cite{cardwell2017,cao2019}. CUBIC and Reno reduced their windows after each loss, which is consistent with their near-idle delay percentiles and zero median in-window TBF drops under injected loss. The Mathis reference gives roughly 6.8, 3.0, and 1.5 Mb/s for the three nonzero settings. Both loss-based algorithms followed the broad decline while delivering 8--33\% more than the reference. The model's fixed-RTT and no-timeout assumptions make it an approximate comparison, especially at 2\% \cite{mathis1997}. The CUBIC--Reno gap widened rather than narrowed, but it stayed below 0.2 Mb/s. With five runs per condition, the data show a similarly large degradation for both algorithms on this path.
+\textbf{RQ1.} At 2\% loss, BBR maintained almost 90 Mb/s while retransmitting about 20 segments per 1,000 sent. Its pacing depends on estimated delivery rate and propagation RTT, allowing it to maintain a high rate while TCP recovers lost data \cite{cardwell2017,cao2019}. CUBIC and Reno, by contrast, cut their windows after each loss: with injected loss their excess-RTT percentiles sat near 0.1 ms and the in-window TBF drop median was zero, so neither of them built a lasting queue. The Mathis reference gives roughly 6.8, 3.0, and 1.5 Mb/s for the three nonzero settings, and both loss-based algorithms followed that broad decline while delivering 8--33\% more than the reference, although the model's fixed-RTT and no-timeout assumptions make it an approximate comparison, especially at 2\% \cite{mathis1997}. The CUBIC--Reno gap widened rather than narrowed, but it stayed below 0.2 Mb/s, which is small next to the fall from about 95 Mb/s to under 2 Mb/s.
 
-\textbf{RQ2.} Growing the queue from 0.25 to 4 BDP moved the split from 96.8\% for BBR to 56.5\% for CUBIC. In the shallow queue, the high TBF drop count and CUBIC retransmission rate are consistent with CUBIC repeatedly reducing its window while BBR continued to probe. In the deep queue, CUBIC had room to increase its window and maintain a large backlog. This pattern agrees with the direction observed by Jaeger et al. and with Ware et al.'s explanation linking BBRv1's share to its inflight limit \cite{jaeger2019,ware2019}. With only three queue sizes, the experiment does not locate where the split crosses 50\%, and it does not measure the inflight mechanism directly.
+\textbf{RQ2.} Growing the queue from 0.25 to 4 BDP moved the split from 96.8\% for BBR to 56.5\% for CUBIC. The shallow queue dropped far more packets than the deeper ones and CUBIC also retransmitted most often there, which is what we would expect if CUBIC kept cutting its window after drops while BBR went on probing. In the deep queue CUBIC had room to grow its window and hold a large backlog, so its share could rise without the same penalty. This pattern agrees with the direction observed by Jaeger et al. and with Ware et al.'s explanation linking BBRv1's share to its inflight limit \cite{jaeger2019,ware2019}. With only three queue sizes, we cannot place the 50\% crossing more precisely than somewhere between 1 and 4 BDP, and we do not measure the inflight mechanism directly.
 
-\textbf{RQ3.} Aggregate goodput varied by only 3.1 Mb/s across the three queue sizes, while the split and the delay varied widely. Moving from 0.25 to 4 BDP improved the average split and reduced retransmissions relative to the shallow queue, but added 181.7 ms to P95 excess RTT. The backlog-based delay rose from 1.9 to 147.6 ms, consistent with persistent queueing in the deep condition. The 1 BDP queue had the fewest TBF drops and the lowest BBR retransmission rate, but still gave BBR 85.0\% of delivered data.
+\textbf{RQ3.} Aggregate goodput barely moved across the three queue sizes, while the split and the delay varied widely. Moving from 0.25 to 4 BDP improved the average split and reduced retransmissions relative to the shallow queue, but added 181.7 ms to P95 excess RTT. The backlog-based delay rose from 1.9 to 147.6 ms, so the deep queue stayed occupied for most of each window. At 1 BDP we saw the fewest TBF drops and the lowest BBR retransmission rate, yet BBR still took 85.0\% of delivered data.
 
 \subsection{Validity, Limitations, and Generalizability}
 
@@ -249,7 +249,7 @@ Excess-RTT percentiles use successful ICMP replies. Drops can remove probes that
 
 The 75 runs cover the chosen conditions on one emulated host. With five runs per condition, the exact rank tests have only 252 possible allocations and a minimum two-sided $p$ value of $0.0079$ for untied data. The comparisons were unadjusted for multiplicity and have limited precision for smaller contrasts. Alternating the start order exposed each queue to both launch orders and left a three-to-two imbalance. The first-to-last comparison and the last-120-s analysis support the reported ordering, while simultaneous and differently staggered arrivals could lead to different rates.
 
-The findings apply to long-lived Linux BBRv1, CUBIC, and Reno flows on one drop-tail path with fixed capacity and RTT. Injected loss was independent and on the forward path. Deployments with bursty loss, RTT asymmetry, multiple flows, short transfers, or active queue management can produce other results. BBR versions differ in their coexistence behavior \cite{sarpkaya2025}. With three queue sizes, we can only say that BBR's share fell below 50\% somewhere between 1 and 4 BDP.
+The findings apply to long-lived Linux BBRv1, CUBIC, and Reno flows on one drop-tail path with fixed capacity and RTT. Injected loss was independent and on the forward path. Deployments with bursty loss, RTT asymmetry, multiple flows, short transfers, or active queue management can produce other results. BBR versions differ in their coexistence behavior as well \cite{sarpkaya2025}.
 
 \subsection{Ethics, Societal Aspects, and Sustainability}
 
@@ -261,7 +261,7 @@ The measurements used an existing host and software emulation. Retransmissions a
 
 \subsection{Implications and Future Work}
 
-On this path, the three queue settings differed by 3.1 Mb/s in aggregate goodput but by 181.7 ms in P95 excess RTT, so an evaluation of a deployment should also report per-flow sharing, retransmissions, and delay percentiles. The immediate follow-up is to test intermediate queue sizes between 1 and 4 BDP with more balanced start-order repeats and longer overlaps. This would locate the change in the split and quantify variation under both launch orders. Repeating the comparison on bare-metal Linux with a newer BBR version and an active queue-management configuration would test whether a more even allocation is possible with less delay.
+The three queue settings differed by only 3 Mb/s in aggregate goodput but by 180 ms in P95 excess RTT, so an evaluation of a deployment should also report per-flow sharing, retransmissions, and delay percentiles. The immediate follow-up is to test intermediate queue sizes between 1 and 4 BDP with more balanced start-order repeats and longer overlaps. This would locate the change in the split and quantify variation under both launch orders. Repeating the comparison on bare-metal Linux with a newer BBR version and an active queue-management configuration would test whether a more even allocation is possible with less delay.
 
 \section{Conclusion}
 
